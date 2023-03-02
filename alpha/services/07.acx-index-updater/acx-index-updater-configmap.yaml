@@ -1,0 +1,185 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: acx-index-updater
+  namespace: ops360
+data:
+  application.conf: |-
+    include "/acx/config/common/core.conf"
+
+     datastax-java-driver {
+      basic.contact-points = ["cassandra.poc-demo.alveo-sandbox.net:9042"]
+
+      basic.request {
+        timeout = "30 seconds"
+      }
+
+      basic.load-balancing-policy {
+        local-datacenter = "dc1"
+      }
+
+      advanced.connection {
+        pool {
+          local {
+            size = 32
+          }
+          remote {
+            size = 32
+          }
+        }
+        max-requests-per-connection = 2048
+        max-orphan-requests = 800
+      }
+
+     advanced.throttler {
+        class = ConcurrencyLimitingRequestThrottler
+        max-concurrent-requests = 10000
+        max-queue-size = 100000
+      }
+    }
+
+    akka {
+       loggers = ["akka.event.slf4j.Slf4jLogger"]
+       logging-filter = "akka.event.slf4j.Slf4jLoggingFilter"
+       loglevel = "info"
+       loglevel = ${?LOG_LEVEL}
+     }
+
+     KafkaConfig {
+       kafka.bootstrap.servers = "kafka.poc-demo.alveo-sandbox.net:9092"
+       kafka.topic = "ac.index.acx123"
+       kafka.pollTimeoutMS = 1000
+       kafka.group.id = "ACX-INDEX"
+       kafka.max.partition.fetch.bytes = "157286400"
+       kafka.fetch.max.bytes = "314572800"
+       kafka.max.poll.records = "1000"
+       kafka.auto.offset.reset = "earliest"
+       kafka.session.timeout.ms = "30000"
+       kafka.heartbeat.interval.ms = "10000"
+     }
+
+     Solr {
+       solrHosts = ["solr.poc-demo.alveo-sandbox.net"]
+       zkHosts = ["zookeeper.poc-demo.alveo-sandbox.net"]
+       solrPort = "8983"
+       zkPort = "2181"
+       zkChRoot = "/solr"
+       confName = "historyConfig"
+       numShards = 1
+       numReplicas = 1
+       maxShardsPerNode = 10
+       commitWithinMs = -1
+       connTimeoutMs = 600000
+       username = ""
+       password = ""
+       maxADOSolrQueriesSize = 20
+     }
+
+    Performance {
+      processes = "4"
+      parallelism = "8"
+      maxGroupSize = 2500
+      maxGroupDurationMillis = 10000
+      maxCommitBatchSize = 2500
+      maxCommitDurationMillis = 10000
+      metering = false
+      statistic = false
+    }
+  application.ini: |-
+    -J-javaagent:/opt/agent/jmx_prometheus_javaagent-0.11.0.jar=9999:/opt/agent/config.yaml
+
+    # Setting -X directly (-J is stripped)
+    # -J-X
+
+    -J-XX:+UseG1GC
+    -J-Xmx7G
+    -J-Xms7G
+    -J-XX:+UseStringDeduplication
+    -J-XX:+OptimizeStringConcat
+
+    -J-XX:+HeapDumpOnOutOfMemoryError
+    -J-XX:HeapDumpPath=/acx/heap/java_pid<pid>.hprof
+    -J-XX:+UseGCOverheadLimit
+
+    # Add additional jvm parameters
+    # -Dkey=val
+    -Dlogback.configurationFile=path/logback.xml
+
+    -Dconfig.file=/acx/config/app/application.conf
+    -Dlog4j2.configurationFile=/acx/config/common/log4j2.xml
+    -Darchaius.configurationSource.additionalUrls=file:///acx/config/common/apache.solr.properties
+    -Dhazelcast.logging.type=log4j2
+    -Dlog4j2.disable.jmx=true
+
+    # Don't run the java version check
+    # -no-version-check
+
+    # enabling debug and sending -d as app argument
+    # the '--' prevents app-parameter swallowing when
+    # using a reserved parameter. See #184
+    # -d -- -d
+    -- -d64
+  schema.xml: |-
+    <?xml version="1.0" encoding="UTF-8" ?>
+    <!--
+    Copyrights: Asset Control International B.V.
+    All Rights Reserved.
+    -->
+    <schema name="history" version="1.6">
+      <field name="id" type="string" indexed="true" stored="true" required="true" multiValued="false" />
+      <field name="_version_" type="plong" indexed="true" stored="false" />
+
+      <!-- schema for history index -->
+      <field name="bid" type="string" indexed="true" stored="true" required="true" multiValued="false"/>
+      <field name="lid" type="string" indexed="true" stored="true" required="true" multiValued="false"/>
+
+      <field name="as_on" type="pdate" indexed="true" stored="true" required="true" multiValued="false"/>
+      <field name="start" type="pdate" indexed="true" stored="true" required="true" multiValued="false"/>
+      <field name="expiry" type="pdate" indexed="true" stored="true" required="true" multiValued="false"/>
+
+      <field name="attribute_id" type="string" indexed="true" stored="true" multiValued="false"/>
+      <field name="text_attr_val" type="text_general" indexed="true" stored="true" multiValued="true"/>
+      <field name="int_attr_val" type="plong" indexed="true" stored="true" multiValued="true"/>
+      <field name="double_attr_val" type="pdouble" indexed="true" stored="true" multiValued="true"/>
+      <field name="boolean_attr_val" type="boolean" indexed="true" stored="true" multiValued="true"/>
+      <field name="translations.value" type="string" indexed="true" stored="true" multiValued="false"/>
+      <field name="translations.src" type="plong" indexed="true" stored="true" multiValued="false"/>
+      <field name="translation_id" type="string" indexed="true" stored="true" multiValued="false"/>
+
+      <uniqueKey>id</uniqueKey>
+
+      <fieldType name="string" class="solr.StrField" sortMissingLast="true" docValues="true" />
+      <fieldType name="boolean" class="solr.BoolField" sortMissingLast="true"/>
+      <fieldType name="pint" class="solr.IntPointField" docValues="true"/>
+      <fieldType name="pfloat" class="solr.FloatPointField" docValues="true"/>
+      <fieldType name="plong" class="solr.LongPointField" docValues="true"/>
+      <fieldType name="pdouble" class="solr.DoublePointField" docValues="true"/>
+      <fieldType name="pdate" class="solr.DatePointField" docValues="true"/>
+      <fieldType name="text_general" class="solr.TextField" positionIncrementGap="100" multiValued="true"/>
+    </schema>
+  solrconfig.xml: |-
+    <?xml version="1.0" ?>
+    <!--
+    Copyrights: Asset Control International B.V.
+    All Rights Reserved.
+    -->
+    <config>
+      <dataDir>${solr.data.dir:}</dataDir>
+      <directoryFactory name="DirectoryFactory" class="${solr.directoryFactory:solr.NRTCachingDirectoryFactory}"/>
+      <schemaFactory class="ClassicIndexSchemaFactory"/>
+      <luceneMatchVersion>8.6.0</luceneMatchVersion>
+      <updateHandler class="solr.DirectUpdateHandler2">
+        <updateLog>
+          <str name="dir">${solr.data.dir:}</str>
+        </updateLog>
+      </updateHandler>
+      <requestHandler name="/select" class="solr.SearchHandler">
+        <lst name="defaults">
+          <str name="echoParams">explicit</str>
+          <str name="indent">true</str>
+          <str name="df">text</str>
+        </lst>
+      </requestHandler>
+    </config>
+
+

@@ -1,0 +1,42 @@
+# Not using this config map
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: process-tracking
+  name: process-tracking
+  namespace: uat01
+data:
+  PToverride.properties: |-
+    spring.jpa.hibernate.ddl-auto=none
+    spring.h2.console.enabled=true
+    spring.h2.console.path=/h2
+
+    spring.datasource.url=jdbc:h2:file:/DB/main;TRACE_LEVEL_SYSTEM_OUT=2;DB_CLOSE_ON_EXIT=FALSE;INIT=CREATE SCHEMA IF NOT EXISTS AC\\;SET SCHEMA AC
+
+    spring.liquibase.change-log=classpath:db/db.changelog-master.xml
+
+    ops.auth.keystore-file=config/keystore.jks
+    ops.auth.keystore-password=password
+    ops.auth.key-alias=ac-authentication
+    ops.auth.algorithm=SHA256withECDSA
+
+    ops.auth.enabled=false
+
+    ops.kafka.enabled=false
+    ops.kafka.topic=test_topic
+    ops.kafka.broker="kafka1.uat.acx-sandbox.net:9092"
+
+    server.max-http-header-size=1024000
+
+    logging.level.com.ac.ops.tracking=DEBUG
+
+
+    ops.cassandra.createSchema=true
+    ops.cassandra.keyspace=ops360uat01_proess_tracking
+
+
+  cassandra.conf: |-
+    datastax-java-driver.basic.contact-points=["cassandra1.uat.acx-sandbox.net:9042"]
+    datastax-java-driver.basic.load-balancing-policy.local-datacenter=us-east
+

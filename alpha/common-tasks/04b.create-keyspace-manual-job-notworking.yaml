@@ -1,0 +1,52 @@
+
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    job: create-keyspace-testpraveen123
+  name: create-keyspace
+  namespace: ops360 
+spec:
+  template:
+    metadata:
+      labels:
+        job: create-keyspace-testpraveen123
+    spec:
+      containers:
+      - command:
+        - /opt/docker/bin/acx-plus
+        - -main
+        - com.assetcontrol.acx.tools.DatabaseInit
+        - -Dconfig.file=/opt/docker/conf/core.conf
+        - -Dlog4j2.configurationFile=/acx/config/app/log4j2.xml
+        env:
+        - name: CASSANDRA_READ_CONSISTENCY
+          value: LOCAL_ONE
+        - name: CASSANDRA_WRITE_CONSISTENCY
+          value: LOCAL_ONE
+        - name: CASSANDRA_HOSTS
+          value: cassandra.poc-demo.alveo-sandbox.net:9042
+        - name: CASSANDRA_KEYSPACE
+          value: testpraveen123 # give the name of the cassandra keyspace you wish to create
+        - name: CASSANDRA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: cassandra-credentials
+        - name: CASSANDRA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: cassandra-credentials
+        image: 187368916732.dkr.ecr.us-east-1.amazonaws.com/acx-plus:1.2.3-RC2.704 
+        imagePullPolicy: IfNotPresent
+        name: acx-plus
+        volumeMounts:
+        - mountPath: /acx/config/app
+          name: database-init-volume
+      dnsPolicy: ClusterFirst
+      restartPolicy: Never
+      volumes:
+      - configMap:
+          name: database-init
+        name: database-init-volume

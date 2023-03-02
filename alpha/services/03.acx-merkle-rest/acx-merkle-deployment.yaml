@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: acx-merkle
+    log-topic: logs.app.acx.merkle
+    suite: acx
+  name: acx-merkle
+  namespace: ops360
+spec:
+  selector:
+    matchLabels:
+      app: acx-merkle
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape_port: "9999"
+        prometheus.io/should_be_scraped: "true"
+      labels:
+        app: acx-merkle
+        keyspace: acx123
+        log-topic: logs.app.acx.merkle
+    spec:
+      containers:
+      - env:
+        - name: CASSANDRA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: cassandra-credentials
+        - name: CASSANDRA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: cassandra-credentials
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: JWT_SIGNATURE_KEY
+          valueFrom:
+            secretKeyRef:
+              key: signature_key
+              name: jwt-secrets
+        - name: LOG_KAFKA_TOPIC
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['log-topic']
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: 187368916732.dkr.ecr.us-east-1.amazonaws.com/acx-merkle-rest:1.2.3-RC1.95
+        imagePullPolicy: IfNotPresent
+        name: acx-merkle-rest
+        ports:
+        - containerPort: 1080
+          name: rest
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /acx/config/common
+          name: acx-common-volume
+        - mountPath: /acx/config/app
+          name: acx-merkle-config-volume
+        - mountPath: /opt/docker/conf
+          name: acx-merkle-config-volume
+      imagePullSecrets:
+      - name: aws-uat-ecr-cred
+      volumes:
+      - configMap:
+          name: acx-common
+        name: acx-common-volume
+      - configMap:
+          name: acx-merkle-rest
+        name: acx-merkle-config-volume

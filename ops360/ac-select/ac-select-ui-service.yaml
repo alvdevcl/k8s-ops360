@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ac-select-ui
+  name: ac-select-ui
+  namespace: uat01
+spec:
+  ports:
+    - name: http
+      port: 8080
+  selector:
+    app: ac-select-ui

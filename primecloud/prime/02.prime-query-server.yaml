@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: prime-query-server
+  name: prime-query-server
+  namespace: primecloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prime-query-server
+  serviceName: prime-query-rpc
+  template:
+    metadata:
+      labels:
+        app: prime-query-server
+    spec:
+      initContainers:
+        - name: init-prime
+          image: ac-m2repo-prod:5000/prime/init-prime-server:latest
+          env:
+            - name: INSTALLATION_NAME
+              value: dev
+            - name: DB_HOST
+              value: "postgresql-db.primecloud.svc.cluster.local"
+            - name: DB_PORT
+              value: "9400"
+            - name: DB_NAME
+              value: "prime"
+            - name: DB_USER
+              value: "prime"
+            - name: DB_PASSWORD
+              value: "acdba1"
+            - name: CASSANDRA_HOST
+              value: "cassandra.primecloud.svc.cluster.local"
+            - name: CREATE_CASSANDRA_KEYSPACE
+              value: "1"
+            - name: CASSANDRA_INSTALL_SCHEMA
+              value: "1"
+          volumeMounts:
+            - name: prime-server-license-volume
+              mountPath: /home/prime/config/license.txt
+              subPath: license.txt
+      volumes:
+        - name: prime-server-license-volume
+          configMap:
+            name: prime-server-license
+
+      containers:
+        - name: query-server
+          image: ac-m2repo-prod:5000/prime/query-server:latest
+          imagePullPolicy: Always
+          env:
+            - name: INSTALLATION_NAME
+              value: "dev"
+            - name: DB_HOST
+              value: "postgresql-db.primecloud.svc.cluster.local"
+            - name: DB_PORT
+              value: "9400"
+            - name: DB_NAME
+              value: "prime"
+            - name: DB_USER
+              value: "prime"
+            - name: DB_PASSWORD
+              value: "acdba1"
+            - name: PUBLIC_NAME
+              value: "172.24.2.78"
+            - name: NUM_THREADS
+              value: "4"
+            - name: NUM_DB_CONNECTIONS
+              value: "4"
+            - name: CASSANDRA_HOST
+              value: "cassandra.primecloud.svc.cluster.local"
+            - name: CASSANDRA_INSTALL_SCHEMA
+              value: "1"
+            - name: HDFS_LOG_HOST
+              value: "hdfs-namenode"
+            - name: HDFS_LOG_PORT
+              value: "9000"
+            - name: HDFS_ROOT
+              value: "/alveo/files/"
+            - name: HAZELCAST_HOST
+              value: "hazelcast"
+            - name: HAZELCAST_CLUSTER
+              value: "hz-cluster"
+          ports:
+            - containerPort: 9931
+          volumeMounts:
+            - name: prime-server-license-volume
+              mountPath: /home/prime/config/license.txt
+              subPath: license.txt
+      volumes:
+        - name: prime-server-license-volume
+          configMap:
+            name: prime-server-license
+      restartPolicy: Always

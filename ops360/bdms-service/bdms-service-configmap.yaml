@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: bdms-service
+  name: bdms-service
+  namespace: uat01 
+data:
+  logback.xml: |-
+    <configuration>
+
+      <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
+
+      <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${application.home:-.}/logs/application.log</file>
+        <encoder>
+          <pattern>%date [%level] from %logger in %thread - %message%n%xException</pattern>
+        </encoder>
+      </appender>
+
+      <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+          <pattern>%date %coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+        </encoder>
+      </appender>
+
+      <appender name="ASYNCFILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE" />
+      </appender>
+
+      <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="STDOUT" />
+      </appender>
+
+      <logger name="play" level="DEBUG" />
+      <logger name="application" level="DEBUG" />
+      <logger name="com.ac.bdms" level="DEBUG" />
+      <logger name="com.ac.api" level="DEBUG" />
+
+      <root level="INFO">
+        <appender-ref ref="STDOUT" />
+      </root>
+    </configuration>
+

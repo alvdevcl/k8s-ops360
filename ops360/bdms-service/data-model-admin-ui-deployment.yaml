@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: data-model-admin-ui
+  name: data-model-admin-ui
+  namespace: uat01 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-model-admin-ui
+  template:
+    metadata:
+      labels:
+        app: data-model-admin-ui
+    spec:
+      containers:
+        - env:
+            - name: PUBLIC_URL
+              value: https://ops360uat01.acx-sandbox.net/data-model-admin
+          image: ac-m2repo-prod:5000/data-model-admin-ui:1.1.0
+          imagePullPolicy: IfNotPresent
+          name: data-model-admin-ui
+          ports:
+            - containerPort: 8080
+      restartPolicy: Always

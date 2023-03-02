@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: task-service-ui
+  name: task-service-ui
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task-service-ui
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: task-service-ui
+    spec:
+      containers:
+        - image: ac-m2repo-prod:5000/task-service-ui:1.0.5
+          name: task-service-ui
+          ports:
+            - containerPort: 8080
+          resources: {}
+      restartPolicy: Always

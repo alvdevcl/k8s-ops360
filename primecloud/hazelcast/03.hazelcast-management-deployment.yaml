@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hazelcast-management
+  namespace: primecloud
+spec:
+  selector:
+    matchLabels:
+      app: hazelcast-management
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: hazelcast-management
+    spec:
+      containers:
+      - name: hazelcast-management-center
+        image: hazelcast/management-center:latest
+        imagePullPolicy: Always
+        ports:
+         - containerPort: 8080
+        env:
+          - name: MC_DEFAULT_CLUSTER
+            value: "hz-cluster"
+          - name: MC_DEFAULT_CLUSTER_MEMBERS
+            value: "hazelcast"
+          - name: MC_ADMIN_USER
+            value: "admin"
+          - name: MC_ADMIN_PASSWORD
+            value: "zoolaiV7"

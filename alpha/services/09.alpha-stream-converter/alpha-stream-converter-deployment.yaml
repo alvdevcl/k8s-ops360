@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: alpha-stream-converter
+  name: alpha-stream-converter
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alpha-stream-converter
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: alpha-stream-converter
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: alpha-stream-converter
+          image: "ac-m2repo-prod:5000/stream-converter:1.0.0"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: AC_HOST
+              value: "santac2.acx-sandbox.net"
+            - name: AC_INST
+              value: "acdba"
+            - name: AC_USER
+              value: "acdba"
+            - name: AC_PASSWORD
+              value: "welcome"
+            - name: BDM_SERVICE_URL
+              value: "http://bdms-service.uat01.svc.cluster.local:6969"
+            - name: INPUT_BROKER
+              value: "http://kafka1.uat.acx-sandbox.net:9092"
+            - name: INPUT_BROKER_BDMS
+              value: "http://kafka1.uat.acx-sandbox.net:9092"
+            - name: OUTPUT_BROKER
+              value: "http://kafka1.uat.acx-sandbox.net:9092"
+            - name: GROUP_ID
+              value: "uoi-consumer-group"
+            - name: GROUP_ID_BDMS
+              value: "bdms-model-updates2"
+            - name: INPUT_TOPIC_BDMS
+              value: "bdms-model-updates"
+            - name: INPUT_TOPICS
+              value: "c.update.txn.ops360serverqauatsep9,ac.update.metadata.ops360serverqauatsep9,ac.update.derived.ops360serverqauatsep9"
+            - name: KEYSTORE_FILE
+              value: "/opt/app/conf/auth/keystore.jks"
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - mountPath: /opt/app/conf/auth
+              name: keystore
+      volumes:
+        - name: keystore
+          secret:
+            secretName: "auth-keystore"
+            items:
+              - key: keystore.jks
+                path: keystore.jks
+
+

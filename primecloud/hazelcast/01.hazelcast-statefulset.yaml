@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hazelcast
+  namespace: primecloud
+  labels:
+    app: hazelcast
+spec:
+  serviceName: hazelcast
+  replicas: 3
+  selector:
+    matchLabels:
+      app: hazelcast
+  template:
+    metadata:
+      labels:
+        app: hazelcast
+    spec:
+      containers:
+      - name: hazelcast
+        image: hazelcast/hazelcast:5.1.2
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 7051
+          name: hazelcast
+        env:
+          - name: HZ_CLUSTERNAME
+            value: "hz-cluster"
+          - name: HZ_CPSUBSYSTEM_CPMEMBERCOUNT
+            value: "3"
+          - name: HZ_NETWORK_RESTAPI_ENABLED
+            value: "true"
+          - name: HZ_NETWORK_RESTAPI_ENDPOINTGROUPS.CP.ENABLED
+            value: "true"
+          - name: HZ_NETWORK_JOIN_MULTICAST_ENABLED
+            value: "false"
+          - name: HZ_NETWORK_JOIN_KUBERNETES_ENABLED
+            value: "true"
+          - name: HZ_NETWORK_JOIN_KUBERNETES_SERVICEDNS
+            value: "hazelcast"

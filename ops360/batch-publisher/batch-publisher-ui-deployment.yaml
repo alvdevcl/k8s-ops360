@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: batch-publisher-ui
+  name: batch-publisher-ui
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: batch-publisher-ui
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: batch-publisher-ui
+    spec:
+      containers:
+        - name: batch-publisher-ui
+          image: ac-m2repo-prod:5000/batch-publisher-ui:1.2.0-4 
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: REACT_APP_BASE_URL
+              value: "/"
+            - name: REACT_APP_API_DATA_BROWSER_ENDPOINT
+              value: "https://ops360uat01.acx-sandbox.net/browse/ac"
+          ports:
+            - containerPort: 8080 
+              name: http
+      restartPolicy: Always

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: dp-propagation-service
+  name: dp-propagation-service
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dp-propagation-service
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: dp-propagation-service
+    spec:
+      containers:
+        - name: dp-propagation-service
+          image: ac-m2repo-prod:5000/ac-data-update-monitor/propagation-service:1.0.2-12 
+          env:
+            - name: INGESTION_HOSTS
+              value: "http://dp-ingestion-service.uat01.svc.cluster.local:9000/api/v1/store"
+            - name: RETRY_AWAIT_DURATION_MS
+              value: "5000"
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - name: deduplication-queue-error
+              mountPath: /opt/docker/files/error
+            - name: deduplication-queue-monitor
+              mountPath: /opt/docker/files/monitor
+            - name: deduplication-queue-success
+              mountPath: /opt/docker/files/success
+      restartPolicy: Always
+      volumes:
+        - name: deduplication-queue-error
+          emptyDir: {}
+        - name: deduplication-queue-monitor
+          emptyDir: {}
+        - name: deduplication-queue-success
+          emptyDir: {}

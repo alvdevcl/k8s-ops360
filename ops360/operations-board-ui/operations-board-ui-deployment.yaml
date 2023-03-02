@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: operations-board-ui
+  name: operations-board-ui
+  namespace: uat01 
+spec:
+  selector:
+    matchLabels:
+      app: operations-board-ui
+  template:
+    metadata:
+      labels:
+        app: operations-board-ui
+    spec:
+      containers:
+        - image: ac-m2repo-prod:5000/operations-board-ui:1.0.6-SNAPSHOT-143
+          imagePullPolicy: IfNotPresent
+          name: operations-board-ui
+          ports:
+            - containerPort: 8080

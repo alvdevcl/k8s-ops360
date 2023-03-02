@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hdfs-datanode-pvc
+  namespace: primecloud
+spec:
+  # Use any suitable storage class for persistent data. Refer to Kubernetes
+  # cluster provider documentation for possible options.
+  #
+  # If you're managing your own kubernetes cluster an example
+  # storage provisioner that could be used is the following:
+  #
+  #   https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner
+  #
+  storageClassName: nfs-primecloud 
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi

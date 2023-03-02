@@ -1,0 +1,127 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: data-lineage
+  name: data-lineage
+  namespace: uat01
+data:
+  schema.cql: |-
+    CREATE KEYSPACE IF NOT EXISTS lineage WITH replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
+    CREATE TABLE IF NOT EXISTS lineage.changes_by_object (
+        object_id text,
+        year int,
+        week int,
+        recorded_on timestamp,
+        attribute_id text,
+        applies_at timestamp,
+        extra_keys text,
+        PRIMARY KEY ((object_id, year, week), recorded_on, attribute_id, applies_at, extra_keys)
+    ) WITH CLUSTERING ORDER BY (recorded_on DESC, attribute_id ASC, applies_at DESC, extra_keys ASC)
+        AND bloom_filter_fp_chance = 0.01
+        AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
+        AND comment = ''
+        AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32', 'min_threshold': '4'}
+        AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}
+        AND crc_check_chance = 1.0
+        AND dclocal_read_repair_chance = 0.1
+        AND default_time_to_live = 0
+        AND gc_grace_seconds = 864000
+        AND max_index_interval = 2048
+        AND memtable_flush_period_in_ms = 0
+        AND min_index_interval = 128
+        AND read_repair_chance = 0.0
+        AND speculative_retry = '99PERCENTILE';
+        
+    CREATE TABLE IF NOT EXISTS lineage.changes_by_time (
+        year int,
+        week int,
+        recorded_on timestamp,
+        object_id text,
+        attribute_id text,
+        applies_at timestamp,
+        extra_keys text,
+        PRIMARY KEY ((year, week), recorded_on, object_id, attribute_id, applies_at, extra_keys)
+    ) WITH CLUSTERING ORDER BY (recorded_on DESC, object_id ASC, attribute_id ASC, applies_at DESC, extra_keys ASC)
+        AND bloom_filter_fp_chance = 0.01
+        AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
+        AND comment = ''
+        AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32', 'min_threshold': '4'}
+        AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}
+        AND crc_check_chance = 1.0
+        AND dclocal_read_repair_chance = 0.1
+        AND default_time_to_live = 0
+        AND gc_grace_seconds = 864000
+        AND max_index_interval = 2048
+        AND memtable_flush_period_in_ms = 0
+        AND min_index_interval = 128
+        AND read_repair_chance = 0.0
+        AND speculative_retry = '99PERCENTILE';
+
+    CREATE TABLE IF NOT EXISTS lineage.attribute_correction (
+        object_id text,
+        attribute_id text,
+        applies_at timestamp,
+        recorded_on timestamp,
+        extra_keys text,
+        class_id text,
+        comment text,
+        datamodel_id text,
+        lineage text,
+        lineage_addition text,
+        process_id text,
+        source_id bigint,
+        source_name text,
+        transaction_id text,
+        user_id text,
+        PRIMARY KEY ((object_id, attribute_id), applies_at, recorded_on, extra_keys)
+    ) WITH CLUSTERING ORDER BY (applies_at DESC, recorded_on DESC, extra_keys ASC)
+        AND bloom_filter_fp_chance = 0.01
+        AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
+        AND comment = ''
+        AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32', 'min_threshold': '4'}
+        AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}
+        AND crc_check_chance = 1.0
+        AND dclocal_read_repair_chance = 0.1
+        AND default_time_to_live = 0
+        AND gc_grace_seconds = 864000
+        AND max_index_interval = 2048
+        AND memtable_flush_period_in_ms = 0
+        AND min_index_interval = 128
+        AND read_repair_chance = 0.0
+        AND speculative_retry = '99PERCENTILE';
+
+
+    CREATE TABLE IF NOT EXISTS lineage.attribute_change (
+        object_id text,
+        attribute_id text,
+        applies_at timestamp,
+        recorded_on timestamp,
+        extra_keys text,
+        caused_by_changes text,
+        class_id text,
+        comment text,
+        datamodel_id text,
+        lineage text,
+        lineage_addition text,
+        process_id text,
+        source_id bigint,
+        source_name text,
+        transaction_id text,
+        user_id text,
+        PRIMARY KEY ((object_id, attribute_id), applies_at, recorded_on, extra_keys)
+    ) WITH CLUSTERING ORDER BY (applies_at DESC, recorded_on DESC, extra_keys ASC)
+        AND bloom_filter_fp_chance = 0.01
+        AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
+        AND comment = ''
+        AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32', 'min_threshold': '4'}
+        AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}
+        AND crc_check_chance = 1.0
+        AND dclocal_read_repair_chance = 0.1
+        AND default_time_to_live = 0
+        AND gc_grace_seconds = 864000
+        AND max_index_interval = 2048
+        AND memtable_flush_period_in_ms = 0
+        AND min_index_interval = 128
+        AND read_repair_chance = 0.0
+        AND speculative_retry = '99PERCENTILE';

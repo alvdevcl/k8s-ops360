@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: dp-read-service
+  name: dp-read-service
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dp-read-service
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: dp-read-service
+    spec:
+      containers:
+        - name: dp-read-service
+          image: ac-m2repo-prod:5000/ac-data-update-monitor/read-service:latest
+          env:
+            - name: CASSANDRA_HOSTS
+              value: "cassandra1.uat.acx-sandbox.net"
+          ports:
+            - containerPort: 9000
+      restartPolicy: Always

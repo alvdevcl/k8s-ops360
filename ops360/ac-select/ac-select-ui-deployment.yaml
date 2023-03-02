@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ac-select-ui
+  name: ac-select-ui
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ac-select-ui
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: ac-select-ui
+    spec:
+      containers:
+        - image: ac-m2repo-prod:5000/select-new-ui:2.1.6
+          imagePullPolicy: IfNotPresent
+          name: ac-select-ui
+          env:
+            - name: REACT_APP_BASE_URL
+              value: "/"
+          ports:
+            - containerPort: 8080
+      restartPolicy: Always

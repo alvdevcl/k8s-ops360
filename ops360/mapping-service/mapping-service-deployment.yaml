@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: mapping-service 
+  name: mapping-service
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mapping-service
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mapping-service
+    spec:
+#      initContainers:
+#      - name: initkeyspace
+#        image: cassandra
+#        command:
+#        - /bin/bash
+#        - -c
+#        - |
+#          cqlsh cassandra1.uat.acx-sandbox.net -f /work-dir/schema.cql
+#        volumeMounts:
+#        - name: mapping-service-configmap-volume
+#          mountPath: "/work-dir"
+#          readOnly: true
+
+      containers:
+        - name: mapping-service
+          image: ac-m2repo-prod:5000/mapping-service:1.0.2-SNAPSHOT-37 
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: COOKIE_SECRETS
+              valueFrom:
+                secretKeyRef:
+                  name: mapping-service-auth-token
+                  key: token
+            - name: APPLICATION_SECRET
+              value: "2d8792eab-bc2a-4c44-8bf6-74fc234934b1e16"
+            - name: ALLOWED_HOSTS
+              value: "."
+            - name: BDM_SERVICE_URL
+              value: "http://bdms-service.uat01.svc.cluster.local:6969"
+            - name: DATASETS_SERVICE_URL
+              value: "http://data-sets-service.uat01.svc.cluster.local:9011"
+            - name: PROCESS_TRACKING_SERVICE_URL
+              value: "http://process-tracking.uat01.svc.cluster.local:8090/api/v1/process"
+            - name: KAFKA_BROKER
+              value: "http://kafka1.uat.acx-sandbox.net:9092"
+            - name: CASSANDRA_HOST
+              value: "cassandra1.uat.acx-sandbox.net"
+            - name: CASSANDRA_PORT
+              value: "9042"
+            - name: CASSANDRA_DATA_CENTER
+              value: "us-east"
+            - name: CASSANDRA_AWS_KEYSPACES
+              value: "false"
+            - name: CASSANDRA_AWS_SIGV4
+              value: "false"
+            - name: CASSANDRA_KEYSPACE
+              value: "ops360uat01_enum_mappings"
+            - name: CASSANDRA_CREATE_SCHEMA
+              value: "true" # set it to true for the very first time only or make sure IF NOT EXISTS clause exists in schema.cql
+            - name: CASSANDRA_SCHEMA_FILE # note: this setting will automatically create the relevant keyspace and tables
+              value: "/workdir/schema.cql"
+            - name: USE_QUERY_OPTIONS
+              value: "true"
+
+          ports:
+            - containerPort: 9000 
+              name: http
+
+          volumeMounts:
+            - mountPath: "/workdir/schema.cql"
+              name: mapping-service-configmap-volume
+              subPath: schema.cql
+
+
+
+      restartPolicy: Always
+
+      volumes:
+        - name: mapping-service-configmap-volume
+          configMap:
+            name: mapping-service
+            items:
+              - key: schema.cql
+                path: schema.cql
+#
+#        - name: nfspathshare-mapping-service
+#          persistentVolumeClaim:
+#            claimName: mapping-service-pvc
+

@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: acx-rest
+  namespace: ops360
+data:
+  application.conf: |-
+    include "/acx/config/common/core.conf"
+    include "auth.conf"
+
+    akka {
+      loglevel = INFO
+    }
+
+    http {
+      interface = "0.0.0.0"
+      port = 9000
+    }
+  application.ini: |-
+    -J-javaagent:/opt/agent/jmx_prometheus_javaagent-0.11.0.jar=9999:/opt/agent/config.yaml
+
+    # Setting -X directly (-J is stripped)
+    # -J-X
+
+    -J-XX:+UseG1GC
+    -J-Xmx1G
+    -J-Xms1G
+    -J-XX:+UseStringDeduplication
+    -J-XX:+OptimizeStringConcat
+
+    -J-XX:+HeapDumpOnOutOfMemoryError
+    -J-XX:HeapDumpPath=/acx/heap/java_pid<pid>.hprof
+    -J-XX:+UseGCOverheadLimit
+
+    # Add additional jvm parameters
+    # -Dkey=val
+
+    -Dconfig.file=/acx/config/app/application.conf
+    -Darchaius.configurationSource.additionalUrls=file:///acx/config/common/apache.solr.properties
+
+    # Log4j2 Configuration
+    -Dlog4j2.configurationFile=/acx/config/common/log4j2.xml
+    -Dlog4j2.disable.jmx=true
+
+    # Hazelcast Configuration
+    -Dhazelcast.shutdownhook.policy=GRACEFUL
+    -Dhazelcast.logging.type=log4j2
+
+    # Don't run the java version check
+    # -no-version-check
+
+    # enabling debug and sending -d as app argument
+    # the '--' prevents app-parameter swallowing when
+    # using a reserved parameter. See #184
+    # -d -- -d
+    -- -d64
+  auth.conf: |-
+    auth {
+      opTimeoutMS = 10000
+      serviceAuthorizationSAD {
+        loginURL = "http://acx-auth-rest-service.ops360:8080/login"
+        refreshTokenTemplateHeader = "acxRefresh"
+        refreshTokenTemplatePrefix = "Bearer"
+        authorizationURL = "http://acx-auth-rest-service.ops360:8080/auth/rest"
+        authorizationTokenTemplateHeader = "AcxREST"
+        authorizationTokenTemplatePrefix = "Bearer"
+        sadClaimsKey = "sad"
+        signatureVerificationService {
+          type = "local"
+          type = ${?AUTH_TYPE}
+          config {
+            key = ${?JWT_SIGNATURE_KEY}
+          }
+        }
+      }
+    }
+
+

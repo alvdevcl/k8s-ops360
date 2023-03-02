@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: data-sets-service
+  name: data-sets-service
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-sets-service
+  template:
+    metadata:
+      labels:
+        app: data-sets-service
+    spec:
+      containers:
+        - image: ac-m2repo-prod:5000/ac-data-sets-service:1.0.6
+          imagePullPolicy: IfNotPresent
+          name: data-sets-service
+          args: ["-Dconfig.resource=application.postgres.conf"]
+          env:
+            - name: APPLICATION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: data-sets-service-key
+                  key: key
+            - name: DATA_SETS_DB_DRIVER
+              value: org.postgresql.Driver
+            - name: DATA_SETS_DB_URL
+              value: jdbc:postgresql://postgresuat01.acx-sandbox.net:5432/datasets_db
+            - name: DATA_SETS_DB_USER
+              value: acdba
+            - name: DATA_SETS_DB_PASSWORD
+              value: welcome
+            - name: DATA_SETS_DB_EVOLUTIONS_ENABLED
+              value: "true"
+          ports:
+            - containerPort: 9000
+      hostname: data-sets-service
+      restartPolicy: Always
+

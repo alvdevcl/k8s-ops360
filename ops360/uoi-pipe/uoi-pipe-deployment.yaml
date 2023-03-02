@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: uoi-pipe
+  name: uoi-pipe
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: uoi-pipe
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: uoi-pipe
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: uoi-pipe
+          image: ac-m2repo-prod:5000/acx-uoi-pipe-service:1.0.0 
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: UOI_NAME
+              value: "derivedTS2"
+            - name: REGISTRY_ENABLED
+              value: "false"
+            - name: CACHE_SIZE
+              value: "20"
+            - name: LIMIT_SIZE
+              value: "20"
+            - name: PAGE_SIZE
+              value: "10"
+            - name: BDM_SERVICE_URL
+              value: "http://bdms-service.uat01.svc.cluster.local:6969"
+            - name: UOI_SERVICE_URL
+              value: "http://data-sets-service.uat01.svc.cluster.local:9011"
+            - name: INPUT_BROKER
+              value: "http://kafka1.uat.acx-sandbox.net:9092"
+            - name: OUTPUT_BROKER
+              value: "http://kafka1.uat.acx-sandbox.net:9092"
+            - name: GROUP_ID
+              value: "uoi-consumer-group"
+            - name: OUTPUT_TOPIC
+              value: "ops360uat01_output"
+            - name: INPUT_BROKER_AC
+              value: "http://kafka1.uat.acx-sandbox.net:9092"
+            - name: GROUP_ID_AC
+              value: "bdms-model-updates"
+            - name: BDMS_AUTH_TOKEN
+              valueFrom:
+                 secretKeyRef:
+                   name: bdms-service-token
+                   key: token
+          ports:
+            - containerPort: 9105
+

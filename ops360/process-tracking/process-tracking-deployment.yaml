@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: process-tracking
+  name: process-tracking
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: process-tracking
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: process-tracking
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: process-tracking
+          env:
+            - name: ops.auth.enabled
+              value: "false"
+            - name: ops.cassandra.driverFile
+              value: "/override/cassandra.conf"
+            - name: spring.config.additional-location
+              value: "/override/PToverride.properties"
+          image: ac-m2repo-prod:5000/operations360/process-tracking:1.1.1-SNAPSHOT-150 
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: process-tracking-db
+              mountPath: /DB
+            - name: config-volume
+              mountPath: /override
+
+      volumes:
+        - name: config-volume
+          configMap:
+            name: process-tracking
+            items:
+              - key: PToverride.properties
+                path: PToverride.properties
+              - key: cassandra.conf
+                path: cassandra.conf
+
+        - name: process-tracking-db
+          emptyDir: {}
+

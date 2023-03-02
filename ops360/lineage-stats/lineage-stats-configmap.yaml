@@ -1,0 +1,370 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: lineage-stats
+  name: lineage-stats
+  namespace: uat01
+data:
+  application.ini: |-
+    # Setting -X directly (-J is stripped)
+    # -J-X
+
+    -J-Xmx1G
+    -J-Xms1G
+
+    -J-XX:+UseG1GC
+    -J-XX:+UseStringDeduplication
+    -J-XX:+OptimizeStringConcat
+
+    -J-XX:+HeapDumpOnOutOfMemoryError
+    -J-XX:HeapDumpPath=/acx/heap/java_pid<pid>.hprof
+    -J-XX:+UseGCOverheadLimit
+
+    # Add additional jvm parameters
+    # -Dkey=val
+  schema.cql: |-
+    CREATE KEYSPACE IF NOT EXISTS ops360uat01_lineage_stats WITH replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
+    CREATE TABLE IF NOT EXISTS ops360uat01_lineage_stats.stats (
+        dataset_id text,
+        snapshot_start timestamp,
+        snapshot_end timestamp,
+        dataview_name text,
+        datamodel_id text,
+        classview_name text,
+        class_id text,
+        attributeview_name text,
+        attribute_id text,
+        from_status_code int,
+        from_status_description text,
+        from_status_statename text,
+        to_status_code int,
+        to_status_description text,
+        to_status_statename text,
+        process_name text,
+        process_label text,
+        process_is_value_editable boolean,
+        process_requires_other_user boolean,
+        operator text,
+        operator_tag text,
+        avg_duration bigint,
+        first_occurrence timestamp,
+        last_occurrence timestamp,
+        max_duration bigint,
+        median_occurrence timestamp,
+        min_duration bigint,
+        total_occurrences int,
+        PRIMARY KEY (dataset_id, snapshot_start, snapshot_end, dataview_name, datamodel_id, classview_name, class_id, attributeview_name, attribute_id, from_status_code, from_status_description, from_status_statename, to_status_code, to_status_description, to_status_statename, process_name, process_label, process_is_value_editable, process_requires_other_user, operator, operator_tag)
+    ) WITH CLUSTERING ORDER BY (snapshot_start DESC, snapshot_end DESC, dataview_name ASC, datamodel_id ASC, classview_name ASC, class_id ASC, attributeview_name ASC, attribute_id ASC, from_status_code ASC, from_status_description ASC, from_status_statename ASC, to_status_code ASC, to_status_description ASC, to_status_statename ASC, process_name ASC, process_label ASC, process_is_value_editable ASC, process_requires_other_user ASC, operator ASC, operator_tag ASC)
+        AND bloom_filter_fp_chance = 0.01
+        AND caching = {'keys': 'ALL', 'rows_per_partition': 'NONE'}
+        AND comment = ''
+        AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy', 'max_threshold': '32', 'min_threshold': '4'}
+        AND compression = {'chunk_length_in_kb': '64', 'class': 'org.apache.cassandra.io.compress.LZ4Compressor'}
+        AND crc_check_chance = 1.0
+        AND dclocal_read_repair_chance = 0.1
+        AND default_time_to_live = 0
+        AND gc_grace_seconds = 864000
+        AND max_index_interval = 2048
+        AND memtable_flush_period_in_ms = 0
+        AND min_index_interval = 128
+        AND read_repair_chance = 0.0
+        AND speculative_retry = '99PERCENTILE';
+  application.conf: |-
+    # This is the main configuration file the application. It uses the HOCON format.
+    # You may change the configuration here to match you environment, 
+    # or include this file in a custom configuration file that you can pass
+    # to the application using: -Dconfig.file={path_to_file}
+    #
+    # See: https://www.playframework.com/documentation/2.7.0/ConfigFile
+    #      https://www.playframework.com/documentation/2.7.0/ProductionConfiguration
+
+    play {
+      # Configure which hosts are allowed to connect
+      # Pattern '.' means match all, which is not recommended in production!
+      # See https://www.playframework.com/documentation/2.7.0/AllowedHostsFilter
+      # filters.hosts.allowed = ["."]
+
+      modules.enabled += "com.ac.lineage.stats.modules.MainModule"
+      
+      modules.enabled += "com.ac.authorization.AuthorizationModule"
+      
+      # Remove if pidfile is required
+      server.pidfile.path = /dev/null
+
+      server.max-header-size = 64k
+      server.max-header-size = ${?MAX_HEADER_VALUE_LENGTH}
+      
+      http {
+        errorHandler = play.http.JsonHttpErrorHandler
+
+        secret.key = "changeme"
+        secret.key = ${?APPLICATION_SECRET}
+
+        parser {
+          maxMemoryBuffer = 128MB
+          maxMemoryBuffer = ${?PLAY_HTTP_PARSER_MAX_MEMORY_BUFFER}
+
+          maxDiskBuffer = 128MB
+          maxDiskBuffer = ${?PLAY_HTTP_PARSER_MAX_DISK_BUFFER}
+        }
+      }
+      
+      ws.timeout.request = 20 minutes
+      ws.timeout.request = ${?PLAY_WS_TIMEOUT_REQUEST}
+      
+      ws.timeout.idle = 10 minutes
+      ws.timeout.idle = ${?PLAY_WS_TIMEOUT_IDLE}
+
+      filters.csrf.header.bypassHeaders {
+        Csrf-Token = "nocheck"
+        Csrf-Token = ${?CSRF_TOKEN}
+      }
+
+      # disable the built in filters
+      http.filters = play.api.http.NoHttpFilters
+
+      filters {
+        contentType {
+          # If non empty, then requests will be checked if the content type is not in this list.
+          whiteList = ["application/json"]
+        }
+      }
+    }
+
+    akka.http.parsing.max-uri-length = 2k
+    akka.http.parsing.max-uri-length = ${?MAX_URI_LENGTH}
+
+    http {
+      address = "0.0.0.0"
+      address = ${?ADDRESS}
+
+      # to disable, set port to: disabled
+      port = 9000
+      port = ${?PORT}
+      port = ${?HTTP_PORT}
+    }
+
+    https.port=${?HTTPS_PORT}
+
+    play.server.https.keyStore {
+      path = ${?HTTPS_KEY_STORE_PATH}
+      type = ${?HTTPS_KEY_STORE_TYPE}
+      password = ${?HTTPS_KEY_STORE_PASSWORD}
+      algorithm = ${?HTTPS_KEY_STORE_ALGORITHM}
+    }
+
+    cassandra {
+      contactPoints = ["cassandra1.uat.acx-sandbox.net"]
+
+      port = 9042
+      #port = ${?CASSANDRA_PORT}
+
+      createSchemaOnStartup = false
+      createSchemaOnStartup = ${?CASSANDRA_CREATE_SCHEMA}
+
+      schemaFile = "/path/to/schema.cql"
+      schemaFile = ${?CASSANDRA_SCHEMA_FILE}
+
+      keyspace = lineage_stats
+      keyspace = ${?CASSANDRA_KEYSPACE}
+
+      reconnectionPolicy {
+        # Possible types: ["exponential", "constant"]
+        type = "exponential"
+        type = ${?CASSANDRA_RECONNECTION_POLICY_TYPE}
+
+        # only used if type == "exponential"
+        baseDelayMs = 1000
+        baseDelayMs = ${?CASSANDRA_RECONNECTION_POLICY_BASE_DELAY}
+
+        maxDelayMs = 10000
+        maxDelayMs = ${?CASSANDRA_RECONNECTION_POLICY_MAX_DELAY}
+
+        # only used if type == "constant"
+        delayMs = 1000
+        delayMs = ${?CASSANDRA_RECONNECTION_POLICY_DELAY}
+      }
+
+      queryLogger {
+
+        # To enable query logging, set 'enabled' to true
+        #
+        # Important note: If set to enabled, make sure to adjust the logging 
+        # framework to accept log messages from QueryLogger, through the logback 
+        # configuration file.
+        # See: https://docs.datastax.com/en/developer/java-driver/3.7/manual/logging/
+        enabled = false
+
+        # value must be greater than zero
+        slowQueryLatencyThresholdMillis = 5000
+
+        # -1 means unlimited (use with care)
+        maxQueryStringLength = 500
+
+        # -1 means unlimited (use with care)
+        maxLoggedParameters = 50
+
+        # -1 means unlimited (use with care)
+        maxParameterValueLength = 50
+      }
+    }
+
+    # See https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing
+    executors {
+
+      # Thread context for database operations
+      database-operations {
+        executor = "thread-pool-executor"
+        throughput = 1
+        thread-pool-executor {
+          fixed-pool-size = 9
+          fixed-pool-size = ${?DATABASE_THREAD_POOL}
+        }
+      }
+
+      scheduling {
+        executor = "thread-pool-executor"
+        throughput = 1
+        thread-pool-executor {
+          fixed-pool-size = 9
+          fixed-pool-size = ${?SCHEDULING_THREAD_POOL}
+        }
+      }
+
+      stats-aggregation {
+        executor = "thread-pool-executor"
+        throughput = 1
+        thread-pool-executor {
+          fixed-pool-size = 9
+          fixed-pool-size = ${?AGGREGATION_THREAD_POOL}
+        }
+      }
+      
+      tasks {
+        executor = "thread-pool-executor"
+        throughput = 1
+        thread-pool-executor {
+          fixed-pool-size = 9
+          fixed-pool-size = ${?TASK_THREAD_POOL}
+        }
+      }
+
+      lineage {
+        executor = "thread-pool-executor"
+        throughput = 1
+        thread-pool-executor {
+          fixed-pool-size = 9
+          fixed-pool-size = ${?LINEAGE_THREAD_POOL}
+        }
+      }
+    }
+
+    ac.authentication {
+        enabled = false
+        enabled = ${?AUTHENTICATION_ENABLED}
+        keystore.file = "conf/auth/keystore.jks"
+        keystore.file = ${?KEYSTORE_FILE}
+        keystore.password = "password"
+        keystore.password = ${?KEYSTORE_PASSWORD}
+        key.alias = "ac-authentication"
+        key.alias = ${?KEY_ALIAS}
+
+        cipher.algorithm = "SHA256withECDSA"
+        rights.cookie.name = "rights"
+        password.expiration.enabled = false
+        rights.expiration.enabled = false
+    }
+
+    validation.ignoreUnknownProperties = true
+
+    authentication {
+      # Should be set to file containing the authentication tokens for:
+      # bdms, lineage, process tracking service and data sets service
+      cookieFile = /opt/ac/conf/cookies.txt
+      cookieFile = ${?AUTH_COOKIE_FILE}
+    }
+
+    services {
+
+      bdms {
+        url = "http://bdms-service:9000"
+        url = ${?BASE_URL_BDMS}
+      }
+
+      datasets {
+        url = "http://data-sets-service:9000"
+        url = ${?BASE_URL_DATASETS}
+      }
+
+      lineage {
+        url = "http://ac-dl-read:9000"
+        url = ${?BASE_URL_LINEAGE}
+      }
+
+      processTracking {
+        url = "http://process-tracking:8080"
+        url = ${?BASE_URL_PROCESS_TRACKING}
+      }
+    }
+
+    mock {
+
+      # Not to be used in production.
+      # Do not set anything to true unless you know what you are doing!
+
+      database = false
+
+      services {
+        lineage = false
+        bdms = false
+        processTracking = false
+        datasets = false
+      }
+
+      resources {
+        path = "test/resources"
+      }
+    }
+
+    snapshots {
+      write {
+        windowMaxHours = 1000
+        windowMaxHours = ${?MAX_HOURS_READ_WINDOW}
+      }
+      read {
+        windowMaxHours = 1000
+        windowMaxHours = ${?MAX_HOURS_WRITE_WINDOW}
+      }
+    }
+  logback.xml: |-
+    <!-- https://www.playframework.com/documentation/latest/SettingsLogger -->
+    <configuration>
+      <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
+      <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+          <pattern>%date %coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+        </encoder>
+      </appender>
+      <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="STDOUT" />
+      </appender>
+      <logger name="play" level="INFO" />
+      <logger name="application" level="INFO" />
+      <logger name="com.ac.lineage.stats" level="INFO" />
+      <!--
+      Turn on slow query logging by setting this logger to DEBUG; 
+      set level to TRACE to also log query parameters 
+      -->
+      <logger name="com.datastax.driver.core.QueryLogger.SLOW" level="OFF" />
+      <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
+      <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />
+      <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF" />
+      <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF" />
+      <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
+      <root level="WARN">
+        <appender-ref ref="ASYNCSTDOUT" />
+      </root>
+    </configuration>
+  cookies.txt: |-
+    rights_0=W3sidXNlcklkIjoibGluZWFnZS1zdGF0cy1zZXJ2aWNlLXVzZXIiLCJzZXJ2aWNlTmFtZSI6IkJETVMuUkVBRC5BTllWSUVXIiwidGltZU9mSXNzdWUiOjE2MTM0OTM5NzQuNzA3MDAwMDAwLCJzaWduYXR1cmUiOiJNRVFDSUU4VmZaekgrR3V3ZUZCeTdFL3lFeGo3TjlsUFJ4VXBnK2JQYU1kdGVMamFBaUJGZUluOVFmT3Q5QW9VNVV0czMzVzFKZ0VDTWg5SnUyd3lZTGgyVkIwOW53PT0ifSx7InVzZXJJZCI6ImxpbmVhZ2Utc3RhdHMtc2VydmljZS11c2VyIiwic2VydmljZU5hbWUiOiJCRE1TLk1FVEEuUkVBRCIsInRpbWVPZklzc3VlIjoxNjEzNDkzOTc0LjcwNzAwMDAwMCwic2lnbmF0dXJlIjoiTUVVQ0lCeENJM3pRS3pGT2xPN2R0cXZxN1lKMURKSEl4cnNoTTljT3FEVytOYlpsQWlFQTcrdTBTM09kNFpYUjM3WkhybktZd0VaSXFkM200dXc0L011a0tWcmp1VjQ9In0seyJ1c2VySWQiOiJsaW5lYWdlLXN0YXRzLXNlcnZpY2UtdXNlciIsInNlcnZpY2VOYW1lIjoiQkRNUy5EQVRBLlJFQUQiLCJ0aW1lT2ZJc3N1ZSI6MTYxMzQ5Mzk3NC43MDcwMDAwMDAsInNpZ25hdHVyZSI6Ik1FVUNJUUMxMkFtQUUyOGMrVkRZMWxDZTRDNWNLbHI1alhHbitEN0FZNFdaaW9wTmRBSWdWR1lEZGlBRCs5TWQwSzh4ZEl2TXFKS0RMaFo3aWpsaDlTRSsreGN6cHFRPSJ9XQ==;rights=1

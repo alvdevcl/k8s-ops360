@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: data-view-admin-ui
+  name: data-view-admin-ui
+  namespace: uat01 
+spec:
+  ports:
+    - name: http
+      port: 8095
+      targetPort: 8080
+  selector:
+    app: data-view-admin-ui

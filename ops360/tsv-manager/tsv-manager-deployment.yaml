@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: tsv-manager
+  name: tsv-manager
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tsv-manager
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: tsv-manager
+    spec:
+      containers:
+        - name: tsv-manager
+          image: ac-m2repo-prod:5000/tsv-manager-service:1.0.1 
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: APPLICATION_SECRET
+              value: "2d879eab-bc2a-4c44-8bf6-74fc799b1e16"
+            - name: BDMS_SERVICE_URL
+              value: "http://bdms-service.uat01.svc.cluster.local:6969"
+            - name: AUTHENTICATION_ENABLED
+              value: "false"
+            - name: AC_HOST
+              value: "santac2.acx-sandbox.net"
+            - name: AC_INST
+              value: "acdba"
+            - name: AC_USER
+              value: "acdba"
+            - name: AC_PASSWORD
+              value: "welcome"
+            - name: BDMS_AUTH_TOKEN
+              valueFrom:
+                 secretKeyRef:
+                   name: bdms-service-token
+                   key: token
+          ports:
+            - containerPort: 9000

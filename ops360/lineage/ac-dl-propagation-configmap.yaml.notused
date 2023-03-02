@@ -1,0 +1,138 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: ac-dl-propagation
+  name: ac-dl-propagation
+  namespace: uat01
+data:
+  application.conf: |-
+
+    # This is the main configuration file the application. It uses the HOCON format.
+    # Change the configuration here to match you environment,
+    # or include this file in a custom configuration file that you can pass
+    # to the application using: -Dconfig.file={path_to_file}
+    #
+
+    propagation {
+
+    # Absolute path to the directory to watch for files to propagate.
+      #sourceDirectory = /path/to/sourceDirectory
+      sourceDirectory = ${?SOURCE_DIRECTORY}
+
+    # List of destinations: urls mapped to filename (glob) patterns.
+    # The filenames of files in {sourceDirectory} are checked against these patterns to decide where to propagate them to.
+    # If a file matches more than one pattern in the list, the first pattern prevails.
+    # Multiple urls can be configured for a destination, of which the first one is used initially and the subsequent urls
+    # as fallbacks (for example when the url becomes unreachable).
+    # In general, you must only uncomment destinationUrls, replace the {host}:{port} part to match your environment
+    # and leave everything else as is (apart from possibly adding more url's as fallbacks)
+      destinations = [
+      {
+        sourceFilePattern = "*.add.json"
+        destinationUrls = ["http://{host}:{port}/add"]
+        destinationUrls = [${DESTINATION}"/add"]
+      },
+      {
+        sourceFilePattern = "*.json"
+        destinationUrls = ["http://{host}:{port}"]
+        destinationUrls = [${DESTINATION}"/"]
+      }
+    ]
+
+    # Authorization token for the destination to be included in the request header
+    destinationAuthToken = ${?DEST_AUTH_TOKEN}
+
+    # Number of files to be included in one request to the destination
+    maxFilesPerRequest = 1
+    maxFilesPerRequest = ${?MAX_FILES_PER_REQUEST}
+
+    # Whether or not to use compression in the propagation
+    useCompression = false
+    useCompression = ${?USE_COMPRESSION}
+
+
+    # Number of threads reserved for propagating files.
+      threadCount = 4
+      threadCount = ${?THREAD_COUNT}
+
+    # Size of the in-memory file queue.
+    # It is recommended to set this to a multiple of {threadCount} to prevent unnecessary idle threads.
+      queueSize = 1024
+      queueSize = ${?QUEUE_SIZE}
+
+    # Maximum number of file propagation retry attempts, per destination.
+    # A propagation will only be retried if the returned error was unexpected.
+    # -1 is no maximum, 0 is no retries
+    # Value must be between -1 and 2147483647.
+      maxRetries = -1
+      maxRetries = ${?MAX_RETRIES}
+
+    # OBSOLETE
+      retryWaitDuration = 1 second
+      retryWaitDuration = ${?RETRY_WAIT_DURATION}
+
+    # Maximum time to wait after a propagation failure before attempting a retry.
+      maxRetryWaitDuration = 10 seconds
+      maxRetryWaitDuration = ${?MAX_RETRY_WAIT_DURATION}
+
+    # Whether to perform an initial sweep at startup, propagating any file present in {sourceDirectory}.
+      initialSweep = true
+      initialSweep = ${?INITIAL_SWEEP}
+
+    # Absolute path to the directory where files are be moved to that failed to propagate too many times.
+      failDirectory = null
+      failDirectory = ${?FAIL_DIRECTORY}
+    }
+
+
+  logger.xml: |-
+    <configuration>
+
+      <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
+
+      <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${application.home:-.}/logs/application.log</file>
+        <encoder>
+          <pattern>%date [%level] from %logger in %thread - %message%n%xException</pattern>
+        </encoder>
+      </appender>
+
+      <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+          <pattern>%date %coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+        </encoder>
+      </appender>
+
+      <appender name="ASYNCFILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE" />
+      </appender>
+
+      <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="STDOUT" />
+      </appender>
+
+      <logger name="play" level="INFO" />
+      <logger name="application" level="TRACE" />
+      <logger name="com.ac.datalineage" level="TRACE" />
+
+      <logger name="com.datastax.driver.core" level="DEBUG" />
+
+      <!--
+      Turn on slow query logging by setting this logger to DEBUG;
+      set level to TRACE to also log query parameters
+      -->
+      <logger name="com.datastax.driver.core.QueryLogger.SLOW" level="OFF" />
+
+      <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
+      <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />
+      <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF" />
+      <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF" />
+      <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
+
+      <root level="WARN">
+        <appender-ref ref="ASYNCFILE" />
+        <appender-ref ref="ASYNCSTDOUT" />
+      </root>
+    </configuration>
+

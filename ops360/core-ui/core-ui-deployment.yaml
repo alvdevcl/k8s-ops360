@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: core-ui
+  name: core-ui
+  namespace: uat01 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: core-ui
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: core-ui
+    spec:
+      containers:
+        - image: "ac-m2repo-prod:5000/core-ui:1.0.7"
+          name: core-ui
+          command:
+            - /bin/sh
+            - -c
+            - |
+              nginx-debug -g "daemon off;"
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+          - name: core-ui-config
+            mountPath: /var/www/conf
+      restartPolicy: Always
+      volumes:
+        - name: core-ui-config
+          configMap:
+            name: core-ui

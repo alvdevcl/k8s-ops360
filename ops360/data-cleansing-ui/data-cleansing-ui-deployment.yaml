@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: data-cleansing-ui
+  name: data-cleansing-ui
+  namespace: uat01 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-cleansing-ui
+  template:
+    metadata:
+      labels:
+        app: data-cleansing-ui
+    spec:
+      containers:
+        - image: ac-m2repo-prod:5000/data-cleansing-ui:1.2.0 
+          imagePullPolicy: IfNotPresent
+          name: data-cleansing-ui
+#          - name: config-volume
+#            mountPath: "/etc/nginx/conf.d/nginx.conf"
+#            subPath: nginx.conf
+#            readOnly: true
+#      hostname: data-cleansing-ui
+      restartPolicy: Always
+#      volumes:
+#        - name: config-volume
+#          configMap:
+#            name: data-cleansing-ui

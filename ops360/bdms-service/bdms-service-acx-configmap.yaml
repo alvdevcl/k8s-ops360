@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: bdms-service-acx
+  name: bdms-service-acx
+  namespace: uat01
+data:
+  application.ini: |-
+    # Setting -X directly (-J is stripped)
+    # -J-X
+    -J-Xmx3G
+    -J-Xms3G
+
+    -J-XX:+UseG1GC
+    -J-XX:+UseStringDeduplication
+    -J-XX:+OptimizeStringConcat
+
+    -J-XX:+HeapDumpOnOutOfMemoryError
+    -J-XX:HeapDumpPath=/acx/heap/java_pid<pid>.hprof
+    -J-XX:+UseGCOverheadLimit
+
+    # Add additional jvm parameters
+    # -Dkey=val
+    -Dplay.http.context=/
+    -Dconfig.file=/opt/docker/conf/application.conf
+    -Dlogger.file=/opt/docker/conf/external/logback.xml
+  
+  solr.properties: |-
+
+    solr.ribbon.listOfServers=solr881.uat.acx-sandbox.net:8983
+    solr.ribbon.MaxAutoRetries=3
+    solr.ribbon.MaxAutoRetriesNextServer=3
+    solr.ribbon.OkToRetryOnAllOperations=true
+    solr.ribbon.ServerListRefreshInterval=2000
+    solr.ribbon.ClientClassName=com.assetcontrol.acx.persistence.search.query.solr.HttpLoadBalancedSearchClient
+    solr.ribbon.eureka.enabled=false
+
+
+  
+  logback.xml: |-
+
+    <configuration>
+
+      <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
+
+      <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${ac.bdms.applog.dir:-./logs}/application.log</file>
+        <encoder>
+          <pattern>%date [%level] from %logger in %thread - %message%n%xException</pattern>
+        </encoder>
+      </appender>
+
+      <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+          <pattern>%date %coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+        </encoder>
+      </appender>
+
+      <appender name="ASYNCFILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE" />
+      </appender>
+
+      <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="STDOUT" />
+      </appender>
+
+      <logger name="play" level="DEBUG" />
+      <logger name="application" level="DEBUG" />
+      <logger name="com.ac.bdms" level="DEBUG" />
+      <logger name="com.ac.api" level="DEBUG" />
+
+      <root level="INFO">
+        <appender-ref ref="STDOUT" />
+      </root>
+
+    </configuration>
+
+
+
+

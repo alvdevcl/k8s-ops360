@@ -1,0 +1,132 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: ac-dl-ingest
+  name: ac-dl-ingest
+  namespace: uat01 
+data:
+  logger.xml: |-
+    <configuration>
+    <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${application.home:-.}/logs/application.log</file>
+        <encoder>
+        <pattern>%date [%level] from %logger in %thread - %message%n%xException</pattern>
+        </encoder>
+    </appender>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+        <pattern>%date %coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+        </encoder>
+    </appender>
+    <appender name="ASYNCFILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE" />
+    </appender>
+
+    <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="STDOUT" />
+    </appender>
+
+    <logger name="play" level="INFO" />
+    <logger name="application" level="TRACE" />
+    <logger name="com.ac.datalineage" level="TRACE" />
+
+    <logger name="com.datastax.driver.core" level="DEBUG" />
+
+    <!--
+    Turn on slow query logging by setting this logger to DEBUG;
+    set level to TRACE to also log query parameters
+    -->
+    <logger name="com.datastax.driver.core.QueryLogger.SLOW" level="OFF" />
+
+    <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
+    <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />
+    <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF" />
+    <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF" />
+    <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
+
+    <root level="WARN">
+        <appender-ref ref="ASYNCFILE" />
+        <appender-ref ref="ASYNCSTDOUT" />
+    </root>
+    </configuration>
+
+  lineage.cql: |-
+    CREATE KEYSPACE IF NOT EXISTS ops360uat01_lineage WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+    CREATE TABLE ops360uat01_lineage.attribute_change (
+        object_id text,
+        attribute_id text,
+        applies_at timestamp,
+        recorded_on timestamp,
+        extra_keys text,
+        datamodel_id text,
+        class_id text,
+        lineage text,
+        lineage_addition text,
+        transaction_id text,
+        process_id text,
+        source_id bigint,
+        source_name text,
+        user_id text,
+        comment text,
+        caused_by_changes text,
+        PRIMARY KEY ((object_id, attribute_id), applies_at, recorded_on, extra_keys)
+    )
+    WITH CLUSTERING ORDER BY (applies_at DESC, recorded_on DESC, extra_keys ASC);
+
+    CREATE TABLE ops360uat01_lineage.attribute_correction (
+        object_id text,
+        attribute_id text,
+        applies_at timestamp,
+        recorded_on timestamp,
+        extra_keys text,
+        datamodel_id text,
+        class_id text,
+        lineage text,
+        lineage_addition text,
+        transaction_id text,
+        process_id text,
+        source_id bigint,
+        source_name text,
+        user_id text,
+        comment text,
+        PRIMARY KEY ((object_id, attribute_id), applies_at, recorded_on, extra_keys)
+    )
+    WITH CLUSTERING ORDER BY (applies_at DESC, recorded_on DESC, extra_keys ASC);
+
+    CREATE TABLE ops360uat01_lineage.changes_by_time (
+        year int,
+        week int,
+        recorded_on timestamp,
+        object_id text,
+        attribute_id text,
+        applies_at timestamp,
+        extra_keys text,
+        PRIMARY KEY ((year, week), recorded_on, object_id, attribute_id, applies_at, extra_keys)
+    )
+    WITH CLUSTERING ORDER BY (recorded_on DESC, object_id ASC, attribute_id ASC, applies_at DESC, extra_keys ASC);
+
+    CREATE TABLE ops360uat01_lineage.changes_by_object (
+        object_id text,
+        year int,
+        week int,
+        recorded_on timestamp,
+        attribute_id text,
+        applies_at timestamp,
+        extra_keys text,
+        PRIMARY KEY ((object_id, year, week), recorded_on, attribute_id, applies_at, extra_keys)
+    )
+    WITH CLUSTERING ORDER BY (recorded_on DESC, attribute_id ASC, applies_at DESC, extra_keys ASC);
+
+    CREATE TABLE IF NOT EXISTS ops360uat01_lineage.report_config (
+        id UUID,
+        name text,
+        owner text,
+        dataset_id text,
+        attributes list<text>,
+        statuses list<int>,
+        users list<text>,
+        user_roles list<text>,
+        PRIMARY KEY (id));
+

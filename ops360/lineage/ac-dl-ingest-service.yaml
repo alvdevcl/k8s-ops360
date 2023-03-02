@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ac-dl-ingest
+  name: ac-dl-ingest
+  namespace: uat01 
+spec:
+  ports:
+    - name: http
+      port: 9010
+      targetPort: 9000
+  selector:
+    app: ac-dl-ingest

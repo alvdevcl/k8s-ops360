@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: acx-streaming
+    log-topic: logs.app.acx.streaming
+    suite: acx
+  name: acx-streaming
+  namespace: ops360
+spec:
+  selector:
+    matchLabels:
+      app: acx-streaming
+      cache-service: hazelcast
+  template:
+    metadata:
+      annotations:
+        keyspace: acx123
+        prometheus.io/scrape_port: "9999"
+        prometheus.io/should_be_scraped: "true"
+      labels:
+        app: acx-streaming
+        cache-service: hazelcast
+        keyspace: acx123
+        log-topic: logs.app.acx.streaming
+    spec:
+      containers:
+      - env:
+        - name: CASSANDRA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: cassandra-credentials
+        - name: CASSANDRA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: cassandra-credentials
+        - name: JWT_SIGNATURE_KEY
+          valueFrom:
+            secretKeyRef:
+              key: signature_key
+              name: jwt-secrets
+        - name: LOG_KAFKA_TOPIC
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['log-topic']
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: HAZELCAST_CONFIG_FILE
+          value: /acx/config/common/hazelcast.yaml
+        image: 187368916732.dkr.ecr.us-east-1.amazonaws.com/acx-streaming-server:1.2.3-RC1.2
+        imagePullPolicy: Always
+        name: acx-streaming-server
+        ports:
+        - containerPort: 5701
+          name: hazelcast-0
+          protocol: TCP
+        - containerPort: 5702
+          name: hazelcast-1
+          protocol: TCP
+        - containerPort: 5703
+          name: hazelcast-2
+          protocol: TCP
+        - containerPort: 5704
+          name: hazelcast-3
+          protocol: TCP
+        - containerPort: 5705
+          name: hazelcast-4
+          protocol: TCP
+        - containerPort: 9999
+          name: jmxexporter
+          protocol: TCP
+        - containerPort: 50051
+          name: grpc
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /acx/config/common
+          name: common-config-volume
+        - mountPath: /acx/config/app
+          name: acx-streaming-config-volume
+        - mountPath: /opt/docker/conf
+          name: acx-streaming-config-volume
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      - name: aws-uat-ecr-cred
+      restartPolicy: Always
+      serviceAccount: acx-sa
+      serviceAccountName: acx-sa
+      volumes:
+      - configMap:
+          defaultMode: 420
+          name: acx-common
+        name: common-config-volume
+      - configMap:
+          defaultMode: 420
+          name: acx-streaming-server
+        name: acx-streaming-config-volume
+

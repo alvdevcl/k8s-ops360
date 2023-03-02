@@ -1,0 +1,9 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-uat01 # IMPORTANT pvc needs to mention this name
+provisioner: nfs-dynamic-provisioner # this is the name of the provisioner you gave in the NFS deployment file
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+parameters:
+  archiveOnDelete: "false"

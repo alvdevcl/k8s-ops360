@@ -1,0 +1,149 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prime-server-license
+  namespace: primecloud
+data:
+  license.txt: |
+      # Generated on January 4, 2022 at 10:23:42 +0100, ID = LF65911288222042
+      [/modules/AC_DSM]
+      maximum instances=0
+      [/modules/ACDESKTOP_4D]
+      maximum instances=8
+      [/modules/AC Package Manager]
+      maximum instances=0
+      [/modules/AC_WEB_GUI]
+      maximum instances=0
+      [/modules/ACADMINDESKTOP]
+      maximum instances=0
+      [/modules/ANNA]
+      maximum instances=0
+      [/modules/BLOOMBERG]
+      allowed actions=persecurity,backoffice
+      maximum instances=0
+      [/modules/BLOOMBERG_N0]
+      maximum instances=0
+      [/modules/COLLECTION-SERVICE]
+      maximum instances=0
+      [/modules/ACCONNECT]
+      maximum instances=0
+      [/modules/CONSOLIDATION_C0]
+      maximum instances=0
+      [/modules/DBRS_RATINGSNOW]
+      maximum instances=0
+      [/modules/DBRS_RATINGSNOW_N0]
+      maximum instances=0
+      [/modules/ACDESKTOP]
+      allowed actions=desktop3-rdm
+      [/modules/FCIT_FINCHINA]
+      maximum instances=0
+      [/modules/FCIT_FINCHINA_N0]
+      maximum instances=0
+      [/modules/FITCH_RDS]
+      maximum instances=0
+      [/modules/FITCH_RDS_N0]
+      maximum instances=0
+      [/modules/INTERFACE_ENGINE_CONFIGURABLE_LOADER]
+      maximum instances=0
+      [/modules/INTERFACE_ENGINE_CONFIGURABLE_LOADER_N0]
+      maximum instances=0
+      [/modules/INTERFACE_ENGINE_DEVELOPMENT_KIT]
+      maximum instances=0
+      [/modules/INTERFACE_ENGINE_DEVELOPMENT_KIT_N0]
+      maximum instances=0
+      [/modules/LSE_SEDOL_MASTERFILE]
+      maximum instances=0
+      [/modules/LSE_SEDOL_MASTERFILE_N0]
+      maximum instances=0
+      [/modules/Description]
+      comment=All-purpose license for Engineering - server team
+      customer=Asset Control International B.V.
+      reference=INT_ENGINEERING_DEVTEST_TERM_5
+      [/modules/MARKIT]
+      maximum instances=0
+      [/modules/MARKIT_N0]
+      maximum instances=0
+      [/modules/MOODYS]
+      maximum instances=0
+      [/modules/MOODYS_RDS]
+      maximum instances=0
+      [/modules/MOODYS_N0]
+      maximum instances=0
+      [/modules/GIM]
+      maximum instances=0
+      [/modules/NORMALIZATION_N0]
+      maximum instances=0
+      [/modules/PRICE_CONSTRUCTION_GUI]
+      maximum instances=0
+      [/modules/Server]
+      4-eyes static data=true
+      4-eyes time series=true
+      Analytics Library Extension=true
+      compound static data=true
+      compound time series=true
+      data lineage=true
+      derived static data=true
+      derived time series attributes=true
+      extended static data=true
+      hostid=*(2023-01-01)
+      intraday time series=true
+      multi-dimensional time series=true
+      number of ados=10000000
+      number of static attributes=10000000
+      number of threads=999
+      profiling=true
+      query server instances=10
+      rdbms=postgres,mssql
+      replicator=true
+      sign transactions=false
+      triggered static data=true
+      update server instances=10
+      [/modules/SNP_CROSSWALK_BULK]
+      maximum instances=0
+      [/modules/SNP_CROSSWALK_BULK_N0]
+      maximum instances=0
+      [/modules/SNP_CUSIP_DB]
+      maximum instances=0
+      [/modules/SNP_CUSIP_DB_N0]
+      maximum instances=0
+      [/modules/RATINGSXPRESS]
+      maximum instances=0
+      [/modules/RATINGSXPRESS_N0]
+      maximum instances=0
+      [/modules/XPRESSFEED]
+      maximum instances=0
+      [/modules/SIMPLE-INTERFACE]
+      maximum instances=0
+      [/modules/SMHOLIDAYCALENDAR]
+      maximum instances=0
+      [/modules/TELEKURS_VDF]
+      maximum instances=0
+      [/modules/TELEKURS_VDF_N0]
+      maximum instances=0
+      [/modules/TR_DS_PLUS]
+      maximum instances=0
+      [/modules/REUTERSDATASCOPE]
+      maximum instances=0
+      [/modules/REUTERSDATASCOPE_N0]
+      maximum instances=0
+      [/modules/TR_DATASCOPE_SELECT]
+      maximum instances=0
+      [/modules/TR_DATASCOPE_SELECT_N0]
+      maximum instances=0
+      [/modules/THOMSON_MUNICIPAL_VRDN_DATA]
+      maximum instances=0
+      [/modules/THOMSON_MUNICIPAL_VRDN_DATA_N0]
+      maximum instances=0
+      [/modules/SELECTFEED]
+      maximum instances=0
+      [/modules/SELECTFEED_N0]
+      maximum instances=0
+      [/modules/WMVF1]
+      maximum instances=0
+      [/modules/WMVF1_N0]
+      maximum instances=0
+      [/modules/EMBS_MBS_ONLINE_DATAFILES_N0]
+      maximum instances=0
+      [/modules/EMBS_MBS_ONLINE_DATAFILES]
+      maximum instances=0
+      302C021433A6E9B262C5F558C5E99625364B4EC58B017B6102145AE07EF809E69FD3C9EB566C45FD3D4388CB58E7

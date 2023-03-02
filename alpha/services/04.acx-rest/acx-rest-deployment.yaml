@@ -1,0 +1,99 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: acx-rest
+    cache-service: hazelcast
+    log-topic: logs.app.acx.rest
+    suite: acx
+  name: acx-rest
+  namespace: ops360
+spec:
+  selector:
+    matchLabels:
+      app: acx-rest
+      cache-service: hazelcast
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape_port: "9999"
+        prometheus.io/should_be_scraped: "true"
+      labels:
+        app: acx-rest
+        cache-service: hazelcast
+        keyspace: acx123
+        log-topic: logs.app.acx.rest
+    spec:
+      containers:
+      - env:
+        - name: CASSANDRA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: cassandra-credentials
+        - name: CASSANDRA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: cassandra-credentials
+        - name: JWT_SIGNATURE_KEY
+          valueFrom:
+            secretKeyRef:
+              key: signature_key
+              name: jwt-secrets
+        - name: LOG_KAFKA_TOPIC
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['log-topic']
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: HAZELCAST_CONFIG_FILE
+          value: /acx/config/common/hazelcast.yaml
+        image: 187368916732.dkr.ecr.us-east-1.amazonaws.com/acx-rest:1.2.3-RC1.4
+        imagePullPolicy: IfNotPresent
+        name: acx-rest
+        ports:
+        - containerPort: 5701
+          name: hazelcast-0
+          protocol: TCP
+        - containerPort: 5702
+          name: hazelcast-1
+          protocol: TCP
+        - containerPort: 5703
+          name: hazelcast-2
+          protocol: TCP
+        - containerPort: 5704
+          name: hazelcast-3
+          protocol: TCP
+        - containerPort: 5705
+          name: hazelcast-4
+          protocol: TCP
+        - containerPort: 9000
+          name: jmxexporter
+          protocol: TCP
+        - containerPort: 9000
+          name: rest
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /acx/config/common
+          name: common-config-volume
+        - mountPath: /acx/config/app
+          name: acx-rest-config-volume
+        - mountPath: /opt/docker/conf
+          name: acx-rest-config-volume
+      imagePullSecrets:
+      - name: aws-uat-ecr-cred
+      restartPolicy: Always
+      serviceAccount: acx-sa
+      serviceAccountName: acx-sa
+      volumes:
+      - configMap:
+          name: acx-common
+        name: common-config-volume
+      - configMap:
+          name: acx-rest
+        name: acx-rest-config-volume

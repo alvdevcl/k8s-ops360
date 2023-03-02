@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: browsing-ui
+  name: browsing-ui
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: browsing-ui
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: browsing-ui
+    spec:
+      containers:
+        - image: ac-m2repo-prod:5000/ac-data-browsing-ui:1.1.0
+          imagePullPolicy: IfNotPresent
+          name: browsing-ui
+          ports:
+            - containerPort: 8080
+      restartPolicy: Always

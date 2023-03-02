@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ac-dl-propagation
+  name: ac-dl-propagation
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ac-dl-propagation
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ac-dl-propagation
+    spec:
+      containers:
+        - name: ac-dl-propagation
+#          image: ac-m2repo-prod.asset-control.com:5000/ac-data-lineage-propagation-service:1.0.7-SNAPSHOT-142297ebb3e9b480f947a43b8e200139e4425f60
+          image: ac-m2repo-prod:5000/ac-data-lineage-propagation-service:1.0.8-SNAPSHOT-0edaf55edaa7bce912fb8d6138b63778ec465bf4
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: DESTINATION
+              value: "http://ac-dl-ingest.uat01.svc.cluster.local:9010"
+            - name: DEST_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-token
+                  key: token
+          args: ["-Dlogger.file=/opt/ac/ac-data-lineage-propagation-service/conf/logger.xml"] # This is not generating any logs. Check with len
+          volumeMounts:
+            - name: nfspathshare-lineage-queue
+              mountPath: /opt/ac/lineage_queue
+            - name: nfspathshare-lineage-fails
+              mountPath: /opt/ac/lineage_fails
+            - name: ac-dl-propagation-configmap-volume
+              mountPath: /opt/ac/ac-data-lineage-propagation-service/conf
+          securityContext:
+            allowPrivilegeEscalation: false
+
+      restartPolicy: Always
+
+      securityContext:
+        runAsUser: 9000
+        runAsGroup: 9000
+#        fsGroup: 0
+
+      volumes:
+        - name: ac-dl-propagation-configmap-volume
+          configMap:
+            name: ac-dl-propagation
+            items:
+              - key: application.conf
+                path: application.conf
+              - key: logger.xml
+                path: logger.xml
+        - name: nfspathshare-lineage-queue
+          persistentVolumeClaim:
+            claimName: lineage-queue-pvc #name of the pvc
+        - name: nfspathshare-lineage-fails
+          persistentVolumeClaim:
+            claimName: lineage-fails-pvc #name of the pvc

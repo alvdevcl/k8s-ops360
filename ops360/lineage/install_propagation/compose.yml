@@ -1,0 +1,24 @@
+version: '3.7'
+
+services:
+
+  ac-dl-propagation:
+    container_name: ac-dl-propagation
+    hostname: ac-dl-propagation
+    image: $AC_DL_PROPAGATION
+    user: "$AC_ID"
+    volumes:
+      - $AC_LOGDIR/lineage/queue:/opt/ac/lineage_queue
+      - $DOCKER_DIR/lineage/propagation/lineage_fails:/opt/ac/lineage_fails
+      - $DOCKER_DIR/lineage/propagation/services-logger.xml:/opt/log/logger.xml
+      - $DOCKER_DIR/lineage/propagation/certstore:/opt/ac/cacerts 
+    environment:
+      - DESTINATION=https://ac-dl-ingest.ops360uat01.acx-sandbox.net
+      - DEST_AUTH_TOKEN=W3sidXNlcklkIjoidGVjaG5pY2FsIiwic2VydmljZU5hbWUiOiJMSU5FQUdFLkFMTCIsInRpbWVPZklzc3VlIjoxNjE3NzgzNTc0LjUzMzAwMDAwMCwic2lnbmF0dXJlIjoiTUVZQ0lRQ3Y3dEx1cXB0bmladGlud1NVSFUvWTlMNEtJMTVWYWVSS1N3Z2VSTmsxMHdJaEFQVkRXTjBPeXlKdXJRMjMvUm9XYW5mSW1TaEpVUC9YYjRDSXp4SG12NUdvIiwidGVjaG5pY2FsIjpmYWxzZX1d
+    networks:
+      - ac-net
+    command: -Djavax.net.ssl.trustStore=/opt/ac/cacerts
+  
+networks:
+  ac-net:
+    external: true 

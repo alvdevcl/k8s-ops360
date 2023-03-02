@@ -1,0 +1,130 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-interfaces
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-uat01
+  claimRef:
+    namespace: uat01
+    name: interfaces-pvc
+  nfs:
+    path: /home/acdba/ac/interfaces
+    server: santac2.acx-sandbox.net
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-wfe
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-uat01
+  claimRef:
+    namespace: uat01
+    name: wfe-pvc
+
+  nfs:
+    path: /home/acdba/ac/workflowengine/conf
+    server: santac2.acx-sandbox.net
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-lineage-queue
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-uat01
+  claimRef:
+    namespace: uat01
+    name: lineage-queue-pvc
+
+  nfs:
+    path: /home/acdba/data/log/lineage/queue
+    server: santac2.acx-sandbox.net
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-lineage-fails
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-uat01
+  claimRef:
+    namespace: uat01
+    name: lineage-fails-pvc
+
+  nfs:
+    path: /home/acdba/data/log/lineage/fails
+    server: santac2.acx-sandbox.net
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-ac-select-fetcher
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-uat01
+  claimRef:
+    namespace: uat01
+    name: ac-select-fetcher-pvc
+
+  nfs:
+    path: /home/acdba/data/ac-select-fetcher
+    server: santac2.acx-sandbox.net
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-batch-publisher
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs-uat01
+  claimRef:
+    namespace: uat01
+    name: batch-publisher-pvc
+
+  nfs:
+    path: /home/acdba/data/batch-publisher
+    server: santac2.acx-sandbox.net
+

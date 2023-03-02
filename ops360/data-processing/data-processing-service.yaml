@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: data-processing-service
+  name: data-processing-service
+  namespace: uat01
+spec:
+  ports:
+    - name: http
+      port: 9000
+  selector:
+    app: data-processing-service

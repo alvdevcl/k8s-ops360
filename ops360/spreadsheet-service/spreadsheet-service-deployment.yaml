@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: spreadsheet-service
+  name: spreadsheet-service
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spreadsheet-service
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: spreadsheet-service
+    spec:
+      containers:
+        - name: spreadsheet-service
+          image: ac-m2repo-prod:5000/spreadsheet-processing-service:1.0.2-55 
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: APPLICATION_SECRET
+              value: "2d8792eab-bc2a-4c44-8bf6-74fc234934b1e16"
+            - name: BASE_URL_BDMS
+              value: "http://bdms-service.uat01.svc.cluster.local:6969"
+            - name: BASE_URL_PROCESS_TRACKING
+              value: "http://process-tracking.uat01.svc.cluster.local:8090"
+            - name: SPREADSHEETS_DB_URL
+              value: "jdbc:postgresql://postgresuat01.acx-sandbox.net:5432/spreadsheet_db"
+            - name: SPREADSHEETS_DB_USER
+              value: "acdba"
+            - name: SPREADSHEETS_DB_PASSWORD
+              value: "welcome"
+            - name: SPREADSHEETS_DB_EVOLUTIONS_ENABLED
+              value: "true"
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - mountPath: /opt/app/conf/auth
+              name: keystore
+      restartPolicy: Always
+      volumes:
+        - name: keystore
+          secret:
+            secretName: "auth-keystore"
+            items:
+              - key: keystore.jks
+                path: keystore.jks

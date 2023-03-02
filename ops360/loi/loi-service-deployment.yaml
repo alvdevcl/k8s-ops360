@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: loi-service
+  name: loi-service
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loi-service
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: loi-service
+    spec:
+      containers:
+        - name: loi-service
+          image: ac-m2repo-prod:5000/ac-loi-rest:1.0.1-SNAPSHOT-ef012676873b5d92972bb19e0f7157d24381ec2c  
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BDMS_URL
+              value: "http://bdms-service.uat01.svc.cluster.local:6969"
+            - name: DATASET_URL
+              value: "http://data-sets-service.uat01.svc.cluster.local:9011"
+            - name: TASK_SERVICE_URL
+              value: "http://task-service.uat01.svc.cluster.local:9012"
+            - name: AC_SELECT_URL
+              value: "http://ac-select.uat01.svc.cluster.local:9000"
+            - name: PROCESS_TRACKING_URL
+              value: "http://process-tracking.uat01.svc.cluster.local:8090/api/v1"
+            - name: PROCESS_TRACKING_ENABLED
+              value: "true"
+            - name: DB_DRIVER
+              value: org.postgresql.Driver
+            - name: DB_USER
+              value: "acdba"
+            - name: DB_PASSWORD
+              value: "welcome"
+            - name: DB_URL
+              value: "jdbc:postgresql://postgresuat01.acx-sandbox.net:5432/acdba"
+            - name: CONFIGURATION_STORE
+              value: "POSTGRESQL"
+            - name: BDMS_DB_EVOLUTIONS_ENABLED
+              value: "true"
+            - name: DB_HOST
+              value: "postgresuat01.acx-sandbox.net"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_SCHEMA
+              value: "loi_db"
+            - name: USER
+              value:
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - mountPath: /opt/app/conf/auth
+              name: keystore
+            - name: application-secrets
+              mountPath: /var/run/secrets
+      restartPolicy: Always
+      volumes:
+        - name: keystore
+          secret:
+            secretName: "auth-keystore"
+            items:
+              - key: keystore.jks
+                path: keystore.jks
+        - name: application-secrets
+          projected:
+            sources:
+              - secret:
+                  name: bdms-service-token
+                  items:
+                    - key: token
+                      path: ac.bdms.auth-token
+              - secret:
+                  name: dataset-service-auth-token
+                  items:
+                    - key: token
+                      path: ac.dataset.auth-token
+              - secret:
+                  name: task-service-auth-token
+                  items:
+                    - key: token
+                      path: ac.task-service.auth-token
+              - secret:
+                  name: postgres-db-credentials
+                  items:
+                    - key: password
+                      path: ac-loi.db.password

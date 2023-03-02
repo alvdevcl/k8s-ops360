@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ac-select
+  name: ac-select
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ac-select
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ac-select
+    spec:
+      containers:
+        - name: ac-select
+          image: "ac-m2repo-prod:5000/ac-select:2.1.6-SNAPSHOT"
+          imagePullPolicy: IfNotPresent
+          args: ["-Dplay.http.context=/", "-Dplay.server.akka.max-header-value-length=32k"]
+          #args: ["-Dplay.http.context=/", "-Dplay.server.akka.http.parsing.max-header-value-length=4M"]          
+          env:
+            - name: AC_BDMS_URL
+              value: "http://bdms-service.uat01.svc.cluster.local:6969/ac"
+            - name: PROCESS_TRACKING_URL
+              value: "http://process-tracking.uat01.svc.cluster.local:8090/api/v1"
+            - name: PROCESS_TRACKING_ENABLED
+              value: "true"
+            - name: BLOOMBERG_FIRMNAME
+              value: "dl849"
+            - name: DATABASE_URL
+              value: "jdbc:postgresql://postgresuat01.acx-sandbox.net/select_db"
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-db-credentials
+                  key: username
+            - name: DATABASE_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-db-credentials
+                  key: password
+            # TBD:
+            #    - DEDUPLICATION_CHECK_ENABLED=true
+            #    - UPDATE_MONITOR_READ_HOST=http://dp-read-service:9000/api/v1/wasAttributeUpdated
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - mountPath: /opt/app/conf/auth
+              name: keystore
+            - name: application-secrets
+              mountPath: /var/run/secrets
+      restartPolicy: Always
+      volumes:
+        - name: keystore
+          secret:
+            secretName: "auth-keystore"
+            items:
+              - key: keystore.jks
+                path: keystore.jks
+        - name: application-secrets
+          projected:
+            sources:
+              - secret:
+                  name: bdms-service-token
+                  items:
+                    - key: token
+                      path: ac.bdms.auth-token
+              - secret:
+                  name: postgres-db-credentials
+                  items:
+                    - key: password
+                      path: db.default.password
+                    - key: username
+                      path: db.default.username

@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: alpha-publisher-derived
+  name: alpha-publisher-derived
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alpha-publisher-derived
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: alpha-publisher-derived
+    spec:
+      containers:
+        - name: alpha-publisher-derived
+#          image: ac-m2repo-prod:5000/publisher-derived-service:2.0.0-SNAPSHOT-220
+          image: ac-m2repo-prod:5000/publisher-derived-service:2.0.1-SNAPSHOT-12
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOGGING_CONFIG
+              value: "/home/ac/derived-service/config/logback.xml"
+          ports:
+            - containerPort: 8087 
+              name: http
+          volumeMounts:
+            - name: alpha-publisher-derived-volume
+              mountPath: /home/ac/derived-service/config
+      restartPolicy: Always
+
+      volumes:
+        - name: alpha-publisher-derived-volume
+          configMap:
+            name: alpha-publisher-derived
+
+

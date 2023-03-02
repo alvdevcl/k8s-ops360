@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: auth-service
+  name: auth-service
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: "ac-m2repo-prod:5000/authentication-service:1.0.9"
+          env:
+            - name: KEYSTORE_FILE
+              value: "/opt/docker/conf/external/keystore.jks"
+            - name: PASSWORD_STRENGTH_CHECK_ENABLED
+              value: "true"
+            - name: BDMS_BASE_URL
+              value: "bdms-service.uat01.svc.cluster.local:6969"
+            - name: DB_URL
+              value: "jdbc:postgresql://postgresuat01.acx-sandbox.net:5432/auth_db"
+            - name: DB_USER
+              value: "acdba"
+            - name: DB_PASSWORD
+              value: "welcome"
+          args: ["-Dplay.http.context=/"]
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - name: keystore
+              mountPath: /opt/docker/conf/external
+            - name: config-volume
+              mountPath: /opt/docker/conf/load
+      restartPolicy: Always
+      volumes:
+        - name: keystore
+          secret:
+            secretName: "auth-keystore"
+            items:
+              - key: keystore.jks
+                path: keystore.jks
+        - name: config-volume
+          configMap:
+            name: auth-service
+            items:
+              - key: services.json
+                path: services.json

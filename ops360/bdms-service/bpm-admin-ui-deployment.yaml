@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bpm-admin-ui
+  name: bpm-admin-ui
+  namespace: uat01 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bpm-admin-ui
+  template:
+    metadata:
+      labels:
+        app: bpm-admin-ui
+    spec:
+      containers:
+        - image: ac-m2repo-prod:5000/bpm-admin-ui:1.1.0 
+          imagePullPolicy: IfNotPresent
+          name: bpm-admin-ui
+          ports:
+            - containerPort: 8080
+      restartPolicy: Always

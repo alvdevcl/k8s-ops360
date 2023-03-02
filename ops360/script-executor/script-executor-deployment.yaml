@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: script-executor
+  name: script-executor
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: script-executor
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: script-executor
+    spec:
+      containers:
+        - name: script-executor
+          image: ac-m2repo-prod:5000/ac-script-executor-service:1.0.4-SNAPSHOT-45 
+          env:
+            - name: scriptexecutor.server.host
+              value: "santac2.acx-sandbox.net"          
+            - name:  scriptexecutor.server.user
+              value: "acdba"
+            - name:  scriptexecutor.server.password
+              value: "acdba1"
+            - name: scriptexecutor.service.file
+              value: "file:/opt/external/scripts.json"
+            - name: scriptexecutor.process-tracking.url
+              value: "http://process-tracking.uat01.svc.cluster.local:8090/api/v1/process"
+            - name: logging.level.root
+              value: "DEBUG"
+            - name: ac.auth.enabled
+              value: "true"
+            - name: ac.auth.keystore-file
+              value: "/opt/app/conf/auth/keystore.jks"
+            - name: scriptexecutor.auth-service.host
+              value: "http://auth-service.uat01.svc.cluster.local:9005"
+            - name: ac.auth.key-alias 
+              value: "ac-authentication"
+            - name: ac.auth.keystore-password
+              value: "password"
+            - name: ac.auth.algorithm
+              value: "SHA256withECDSA"
+          ports:
+            - containerPort: 8080
+
+          volumeMounts:
+            - name: config-volume
+              mountPath: /opt/external
+            - name: script-executor-auth-keystore
+              mountPath: "/opt/app/conf/auth"
+              readOnly: true
+
+      restartPolicy: Always
+      volumes:
+        - name: config-volume
+          configMap:
+            name: script-executor
+            items:
+              - key: scripts.json
+                path: scripts.json
+              - key: app.properties
+                path: app.properties
+
+        - name: script-executor-auth-keystore
+          secret:
+            secretName: auth-keystore
+            items:
+              - key: keystore.jks
+                path: keystore.jks
+ 

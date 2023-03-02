@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ac-dl-ingest
+  name: ac-dl-ingest
+  namespace: uat01 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ac-dl-ingest
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ac-dl-ingest
+    spec:
+      containers:
+        - name: ac-dl-ingest
+          env:
+            - name: ALLOWED_HOSTS
+              value: "."
+            - name: CASSANDRA_HOST
+              value: "cassandra1.uat.acx-sandbox.net"
+            - name: CASSANDRA_KEYSPACE
+              value: "ops360uat01_lineage"
+            - name: CASSANDRA_CREATE_SCHEMA
+              value: "true" # set it to true for the very first time only
+            - name: CASSANDRA_SCHEMA_FILE
+              value: "/opt/ac/conf/lineage.cql"
+#            - name: AUTHENTICATION_ENABLED # if this true it will look for keystore.jks under /opt/ac/conf/auth 
+#              value: "true"
+            - name: APPLICATION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ac-dl-ingest
+                  key: application-secret
+          args: ["-Dlogger.file=/opt/ac/conf/logger.xml"]
+          #image: ac-m2repo-prod:5000/ac-data-lineage-ingestion-service:1.0.11-SNAPSHOT-129
+          image: ac-m2repo-prod:5000/alveo-data-lineage-ingestion-service:1.1.0
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - name: ac-dl-ingest-configmap-volume
+#              mountPath: "/home/user/app/conf"
+              mountPath: "/opt/ac/conf"
+              readOnly: true
+#            - name: ac-dl-ingest-auth-keystore
+#              mountPath: "/opt/ac/conf/auth"
+#              readOnly: true
+      restartPolicy: Always
+      volumes:
+        - name: ac-dl-ingest-configmap-volume
+          configMap:
+            name: ac-dl-ingest
+            items:
+              - key: logger.xml
+                path: logger.xml
+              - key: lineage.cql
+                path: lineage.cql
+
+#        - name: ac-dl-ingest-auth-keystore
+#          secret:
+#            secretName: auth-keystore
+#            items:
+#              - key: keystore.jks 
+#                path: keystore.jks

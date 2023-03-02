@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hdfs-namenode
+  namespace: primecloud
+spec:
+  ports:
+  - port: 9870
+    name: hdfs-namenode-http
+  - port: 9000
+    name: hdfs-namenode-meta
+  selector:
+    app: hdfs-namenode

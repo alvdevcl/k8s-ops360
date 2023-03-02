@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: data-view-admin-ui
+  name: data-view-admin-ui
+  namespace: uat01 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-view-admin-ui
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: data-view-admin-ui
+    spec:
+      containers:
+        - image: ac-m2repo-prod:5000/data-view-admin-ui:1.1.0 
+          imagePullPolicy: IfNotPresent
+          name: data-view-admin-ui
+          ports:
+            - containerPort: 8080
+      restartPolicy: Always

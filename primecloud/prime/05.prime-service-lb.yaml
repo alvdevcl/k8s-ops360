@@ -1,0 +1,90 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: prime-update-rpc
+  namespace: primecloud
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip" # means ip address not instance 
+    service.beta.kubernetes.io/aws-load-balancer-type: "external" # means not external ip. But should use external alb, not aws
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true" # meaning this is internal loadbalancer with private ip
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 9931
+    name: prime-update-rpc
+  selector:
+    app: prime-update-server
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prime-query-rpc
+  namespace: primecloud
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip" # means ip address not instance
+    service.beta.kubernetes.io/aws-load-balancer-type: "external" # means not external ip. But should use external alb, not aws
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true" # meaning this is internal loadbalancer with private ip
+
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 9932
+    name: prime-query-rpc
+  selector:
+    app: prime-query-server
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prime-replicator-rpc
+  namespace: primecloud
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip" # means ip address not instance
+    service.beta.kubernetes.io/aws-load-balancer-type: "external" # means not external ip. But should use external alb, not aws
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true" # meaning this is internal loadbalancer with private ip
+
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 9933
+    name: prime-replicator-rpc
+  selector:
+    app: prime-replicator-server
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prime-portmapper-tcp
+  namespace: primecloud
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip" # means ip address not instance
+    service.beta.kubernetes.io/aws-load-balancer-type: "external" # means not external ip. But should use external alb, not aws
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true" # meaning this is internal loadbalancer with private ip
+
+spec:
+  type: LoadBalancer
+  ports:
+    - name: prime-portmapper-tcp
+      protocol: TCP
+      port: 111
+  selector:
+    app: prime-query-server
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prime-portmapper-udp
+  namespace: primecloud
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip" # means ip address not instance
+    service.beta.kubernetes.io/aws-load-balancer-type: "external" # means not external ip. But should use external alb, not aws
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true" # meaning this is internal loadbalancer with private ip
+spec:
+  type: LoadBalancer
+  ports:
+    - name: prime-portmapper-udp
+      protocol: UDP
+      port: 111
+  selector:
+    app: prime-query-server
+    

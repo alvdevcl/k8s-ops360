@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ac-select-fetcher
+  name: ac-select-fetcher
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ac-select-fetcher
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ac-select-fetcher
+    spec:
+      containers:
+        - name: ac-select-fetcher
+          image: "ac-m2repo-prod:5000/acselect-fetcher:2.1.7"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: BB_HOST
+              value: "dlsftp.bloomberg.com"
+            - name: BB_PORT
+              value: "30206"
+            - name: BB_USERNAME
+              value: "dl849"
+            - name: BB_ENCRYPTED
+              value: "true"
+            - name: AC_HOST
+              value: "santac2.acx-sandbox.net"
+            - name: DIR_INBOX
+              value: "/opt/docker/files/uploader-inbox"
+            - name: TRACKING_ENABLED
+              value: "true"
+            - name: TRACKING_URL
+              value: "http://process-tracking.uat01.svc.cluster.local:8090/api/v1"
+            - name: connection.bloomberg.password
+              valueFrom:
+                secretKeyRef:
+                  name: bloomberg-credentials
+                  key: password
+            - name: connection.bloomberg.decryption-key
+              valueFrom:
+                secretKeyRef:
+                  name: bloomberg-credentials
+                  key: decryption-key
+          volumeMounts:
+            - name: nfspathshare-ac-select-fetcher
+              mountPath: /opt/docker/files
+
+      volumes:
+        - name: nfspathshare-ac-select-fetcher
+          persistentVolumeClaim:
+            claimName: ac-select-fetcher-pvc #name of the pvc       

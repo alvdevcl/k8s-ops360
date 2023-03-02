@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: bdms-service-acx
+  name: bdms-service-acx
+  namespace: uat01
+spec:
+  ports:
+    - name: http
+      port: 6970
+      targetPort: 9000 
+  selector:
+    app: bdms-service-acx

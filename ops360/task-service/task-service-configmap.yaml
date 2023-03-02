@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: task-service
+  name: task-service
+  namespace: uat01
+data: 
+
+  logback.xml: |-
+    <!-- https://www.playframework.com/documentation/latest/SettingsLogger -->
+    <configuration>
+      <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
+
+      <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+          <pattern>%date %coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+        </encoder>
+      </appender>
+
+      <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="STDOUT" />
+      </appender>
+
+      <logger name="play" level="INFO" />
+      <logger name="application" level="INFO" />
+      <logger name="com.ac.taskservice" level="TRACE" />
+
+      <!--
+      Turn on slow query logging by setting this logger to DEBUG; 
+      set level to TRACE to also log query parameters 
+      -->
+      <logger name="com.datastax.driver.core.QueryLogger.SLOW" level="OFF" />
+
+      <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
+      <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />
+      <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF" />
+      <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF" />
+      <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF" />
+
+      <root level="WARN">
+        <appender-ref ref="ASYNCSTDOUT" />
+      </root>
+    </configuration>
+
+  schema.cql: |-
+    CREATE KEYSPACE IF NOT EXISTS ops360uat01_tasks WITH replication = { 'class' : 'SimpleStrategy', 'replication_factor' : 1 };
+    CREATE TABLE IF NOT EXISTS tasks.task (
+        id uuid,
+        task_name text,
+        description text,
+        service_name text,
+        task_data text,
+        cron_expression text,
+        schedule text,
+        creation_time timestamp,
+        last_run_time timestamp,
+        enabled Boolean,
+        PRIMARY KEY (id)
+    );
+
+    CREATE TABLE IF NOT EXISTS ops360uat01_tasks.scenario (
+        id uuid,
+        name text,
+        description text,
+        status_to_succeed text,
+        timeout_duration int,
+        tasks_completed_to_succeed int,
+        PRIMARY KEY (id)
+    );
+
+    CREATE TABLE IF NOT EXISTS ops360uat01_tasks.preceding_task (
+        task_id uuid,
+        scenario_id uuid,
+        status text,
+        PRIMARY KEY (task_id, scenario_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS ops360uat01_tasks.succeeding_task (
+        task_id uuid,
+        scenario_id uuid,
+        PRIMARY KEY (task_id, scenario_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS ops360uat01_tasks.task_job_update (
+        task_id uuid,
+        task_status text,
+        update_time timestamp,
+        PRIMARY KEY (task_id, task_status, update_time)
+    ) WITH CLUSTERING ORDER BY (task_status DESC, update_time DESC);
+
+    CREATE TABLE IF NOT EXISTS ops360uat01_tasks.task_process_id (
+        process_id text,
+        start_time timestamp,
+        task_id uuid,
+        PRIMARY KEY (process_id, start_time, task_id)
+    ) WITH CLUSTERING ORDER BY (start_time DESC);

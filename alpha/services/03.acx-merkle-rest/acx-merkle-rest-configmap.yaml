@@ -1,0 +1,123 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: acx-merkle-rest
+  namespace: ops360
+data:
+  application.conf: |-
+    akka {
+        loglevel = "INFO"
+        loggers = ["akka.event.slf4j.Slf4jLogger"]
+    }
+
+    http {
+        interface = "0.0.0.0"
+        interface = ${?POD_IP}
+        port = 1080
+    }
+
+    datastax-java-driver {
+      basic.contact-points = ["cassandra.poc-demo.alveo-sandbox.net:9042"]
+
+      basic.request {
+        timeout = 30 seconds
+      }
+
+      basic.load-balancing-policy {
+        local-datacenter = "ops360-cassandra-cluster"
+      }
+
+      advanced.connection {
+        pool {
+          local {
+            size = 32
+          }
+          remote {
+            size = 32
+          }
+        }
+
+        max-requests-per-connection = 2048
+        max-orphan-requests = 800
+      }
+    }
+
+    services {
+      include "auth.conf"
+
+      test {
+          getValue = "get test"
+          postValue = "post test"
+      }
+
+      merkleTree {
+          type = "cassandra"
+          type = ${?MERKLETREE_TYPE}
+          include "cassandra.conf"
+      }
+    }
+  application.ini: |-
+    -J-javaagent:/opt/agent/jmx_prometheus_javaagent-0.11.0.jar=9999:/opt/agent/config.yaml
+
+    # Setting -X directly (-J is stripped)
+    # -J-X
+
+    -J-XX:+UseG1GC
+    -J-Xmx1536M
+    -J-Xms1536M
+    -J-XX:+UseStringDeduplication
+    -J-XX:+OptimizeStringConcat
+
+    -J-XX:+HeapDumpOnOutOfMemoryError
+    -J-XX:HeapDumpPath=/acx/heap/java_pid<pid>.hprof
+    -J-XX:+UseGCOverheadLimit
+
+    # Add additional jvm parameters
+    # -Dkey=val
+    -Dconfig.file=/acx/config/app/application.conf
+    -Dlog4j2.configurationFile=/acx/config/common/log4j2.xml
+    -Dlog4j2.disable.jmx=true
+
+    # enabling debug and sending -d as app argument
+    # the '--' prevents app-parameter swallowing when
+    # using a reserved parameter. See #184
+    # -d -- -d
+    -- -d64
+  auth.conf: |-
+    auth {
+      type = "none"
+      type = ${?AUTH_TYPE}
+
+      properties {
+        // apply to type = "local"
+        opTimeoutMS = 10000
+        loginURL = "http://acx-auth-rest-service.ops360:8080/login"
+        refreshTokenTemplateHeader = "acxRefresh"
+        refreshTokenTemplatePrefix = "Bearer"
+        authorizationURL = "http://acx-auth-rest-service.ops360:8080/auth/merkle"
+        authorizationTokenTemplateHeader = "AcxMerkle"
+        authorizationTokenTemplatePrefix = "Bearer"
+        sadClaimsKey = "sad"
+        signatureVerificationServiceKey = ${?JWT_SIGNATURE_KEY}
+      }
+    }
+  cassandra.conf: |-
+    CassandraConf {
+      username = ${?CASSANDRA_USERNAME}
+      password = ${?CASSANDRA_PASSWORD}
+      hosts = "cassandra.poc-demo.alveo-sandbox.net:9042"
+      keyspace = acx123
+      readConsistency = LOCAL_ONE
+      writeConsistency = LOCAL_ONE
+      retryPolicyMaxAttempts = 3
+      retryPolicyMaxAttempts = ${?CASSANDRA_RETRY_POLICY_MAX_ATTEMPTS}
+      timeout= 120000
+
+      build = "local"
+      createKeyspace = false
+      initializeSearchIndexes = false
+      datacenter = "dc1"
+      tableName = "merkle_trees"
+    }
+
+

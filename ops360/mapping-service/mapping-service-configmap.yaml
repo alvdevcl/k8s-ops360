@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: mapping-service 
+  name: mapping-service
+  namespace: uat01
+data:
+  schema.cql: |-
+    CREATE KEYSPACE IF NOT EXISTS ops360uat01_enum_mappings WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+    CREATE TABLE IF NOT EXISTS ops360uat01_enum_mappings.type_configs
+    (
+        name        text,
+        type        text, 
+        config      text,
+        PRIMARY KEY (name)
+    );

@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ac-dl-read
+  name: ac-dl-read
+  namespace: uat01 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ac-dl-read
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ac-dl-read
+    spec:
+      containers:
+        - name: ac-dl-read
+          env:
+            - name: GENERATE_LINEAGE_CHANGES_LINKS
+              value: "true"
+            - name: LINEAGE_CHANGES_LINKS_PREFIX
+              value: "lineage"
+#            - name: SPARK_MASTER
+#              value: "spark1.ops360.alveotech.com"
+            - name: ALLOWED_HOSTS
+              value: "."
+            - name: CASSANDRA_HOST
+              value: "cassandra1.uat.acx-sandbox.net"
+            - name: CASSANDRA_KEYSPACE
+              value: "ops360uat01_lineage"
+            - name: CASSANDRA_CREATE_SCHEMA    # Lineage schema is already created in ac-dl-ingest configmap
+              value: "false"
+#
+#            - name: AUTHENTICATION_ENABLED # if this true it will look for keystore.jks under /opt/ac/conf/auth 
+#              value: "true"
+            - name: APPLICATION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: ac-dl-read
+                  key: application-secret
+          args: ["-Dlogger.file=/opt/ac/conf/logger.xml"]
+          #image: ac-m2repo-prod:5000/ac-data-lineage-read-service:1.0.11-SNAPSHOT-129 
+          image: ac-m2repo-prod:5000/alveo-data-lineage-read-service:1.1.0 
+           
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - name: ac-dl-read-configmap-volume
+              mountPath: "/opt/ac/conf/"
+              readOnly: true
+#            - name: ac-dl-read-auth-keystore
+#              mountPath: "/home/user/app/conf/auth"
+#              readOnly: true
+      restartPolicy: Always
+      volumes:
+        - name: ac-dl-read-configmap-volume
+          configMap:
+            name: ac-dl-read
+            items:
+              - key: logger.xml
+                path: logger.xml
+
+#        - name: ac-dl-read-auth-keystore
+#          secret:
+#            secretName: auth-keystore
+#            items:
+#              - key: keystore.jks 
+#                path: keystore.jks

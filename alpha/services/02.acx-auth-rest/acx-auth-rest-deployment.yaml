@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: acx-auth
+    suite: acx
+  name: acx-auth-rest
+  namespace: ops360
+spec:
+  selector:
+    matchLabels:
+      app: acx-auth
+  template:
+    metadata:
+      labels:
+        app: acx-auth
+        log-topic: logs.app.acx.rest
+    spec:
+      containers:
+      - env:
+        - name: LOG_KAFKA_TOPIC
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['log-topic']
+        - name: JAVA_OPTS
+          value: -Dlogging.config=file:/acx/config/app/log4j2.xml
+        image: 187368916732.dkr.ecr.us-east-1.amazonaws.com/acx-auth-rest:1.2.3-RC1.95
+        imagePullPolicy: IfNotPresent
+        name: acx-auth-rest
+        ports:
+        - containerPort: 8080
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /acx/config/app
+          name: acx-auth-config-volume
+        - mountPath: /secrets
+          name: acx-auth-rest
+      imagePullSecrets:
+      - name: aws-uat-ecr-cred
+      restartPolicy: Always
+      volumes:
+      - configMap:
+          name: acx-auth-rest
+        name: acx-auth-config-volume
+      - name: acx-auth-rest
+        secret:
+          secretName: acx-auth-rest

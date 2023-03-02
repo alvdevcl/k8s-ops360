@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bdms-service
+  name: bdms-service
+  namespace: uat01 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bdms-service
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: bdms-service
+    spec:
+      containers:
+        - name: bdms-service
+          image: ac-m2repo-prod:5000/business-domain-model-service:1.1.0
+          imagePullPolicy: IfNotPresent
+          args: ["-Dplay.http.context=/ac","-Dlogger.file=/opt/docker/conf/external/logback.xml", "-Dplay.evolutions.db.bdms.autoApply=true", "-Dplay.evolutions.db.default.autoApplyDowns=true"]
+          env:
+            - name: KEYSTORE_FILE
+              value: "/opt/docker/conf/auth/keystore.jks"
+            - name: ALLOWED_HOSTS
+              value: "."
+            - name: PIDFILE_PATH
+              value: "/dev/null"
+            - name: DATA_LINEAGE_SERVICE_BASE_URL
+              value: "http://ac-dl-read.uat01.svc.cluster.local:9009"
+            - name: AUTH_SERVICE_URL
+              value: "http://auth-service.uat01.svc.cluster.local:9005"
+            - name: ISSUE_SERVICE_URL
+              value: "http://issue-service.uat01.svc.cluster.local:9021/issue-service"
+            - name: DATASET_SERVICE_URL
+              value: "http://data-sets-service.uat01.svc.cluster.local:9011"
+            - name: MODEL_FOLDER
+              value: "/opt/docker/config/external"
+            - name: DB_DRIVER
+              value: "oracle.jdbc.OracleDriver"
+            - name: DB_USER
+              value: "acdba"
+            - name: DB_PASSWORD
+              value: "welcome"
+            - name: DB_URL
+              value: "jdbc:oracle:thin:@santac2.acx-sandbox.net:1521/ORCL"
+            - name: PRIME_PERSISTENCE_UNIT
+              value: "Prime_OraclePersistenceUnit"
+            - name: CONFIGURATION_STORE
+              value: "POSTGRESQL"
+            - name: BDMS_DB_EVOLUTIONS_ENABLED
+              value: "true"
+            - name: AC_HOST
+              value: "santac2.acx-sandbox.net"
+            - name: AC_INST
+              value: "acdba"
+            - name: AC_USER
+              value: "acdba"
+            - name: AC_PASSWORD
+              value: "welcome"                                          
+            - name: USE_OVERRIDE
+              value: "true"
+            - name: CHANGELOG_ENABLED
+              value: "true"
+            - name: BDMS_MODEL_CLASS_IN_FUNDMSTR
+              value: "true"
+            - name: BDMS_DB_URL
+              value: "jdbc:postgresql://postgresuat01.acx-sandbox.net:5432/bdms_db" #Note: bdms-service doesn't need cassandra
+            - name: BDMS_DB_USER
+              value: "acdba"
+            - name: BDMS_DB_PASSWORD
+              value: "welcome"
+            # Model synchronization
+            #- name: BDMS_INSTANCE_ID
+            #  value: "ops360uat01Prime"
+            #- name: SYNC_MODE
+            #  value: "PRIMARY"
+            #- name: KAFKA_BROKER
+            #  value: "kafka1.uat.acx-sandbox.net:9092,kafka2.uat.acx-sandbox.net:9092,kafka3.uat.acx-sandbox.net:9092"            
+              
+            - name: AUTH_SERVICE_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-token
+                  key: token
+
+            - name: ISSUE_SERVICE_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: issue-service-token
+                  key: token
+
+            - name: DATA_LINEAGE_SERVICE_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: data-lineage-service-token
+                  key: token
+
+            - name: KEYSTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-keystore-credentials
+                  key: password
+
+          ports:
+            - containerPort: 9000
+              name: http
+          volumeMounts:
+            - name: bdms-auth-keystore
+              mountPath: "/opt/docker/conf/auth"
+              readOnly: true
+            - name: bdms-service-volume
+              mountPath: /opt/docker/conf/external
+      restartPolicy: Always
+      volumes:
+        - name: bdms-auth-keystore
+          secret:
+            secretName: auth-keystore
+            items:
+              - key: keystore.jks
+                path: keystore.jks
+        - name: bdms-service-volume
+          configMap:
+            name: bdms-service
+

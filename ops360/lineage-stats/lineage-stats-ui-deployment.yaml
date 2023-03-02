@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: lineage-stats-ui
+  name: lineage-stats-ui
+  namespace: uat01 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lineage-stats-ui
+  template:
+    metadata:
+      labels:
+        app: lineage-stats-ui
+    spec:
+      containers:
+        - image: ac-m2repo-prod:5000/lineage-stats-ui:1.0.1-SNAPSHOT-33 
+          name: lineage-stats-ui
+          ports:
+            - containerPort: 8080
+      restartPolicy: Always

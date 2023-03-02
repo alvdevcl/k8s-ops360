@@ -1,0 +1,150 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: bdms-service-acx
+  name: bdms-service-acx
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bdms-service-acx
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: bdms-service-acx
+    spec:
+      containers:
+        - name: bdms-service-acx
+          image: ac-m2repo-prod:5000/business-domain-model-service:1.1.0
+          imagePullPolicy: IfNotPresent
+          args: ["-Dlogger.file=/opt/docker/conf/external/logback.xml", "-Dpidfile.path=/dev/null", "-Dsolr.ribbon.listOfServers=solr881.uat.acx-sandbox.net:8983", "-Dsolr.ribbon.MaxAutoRetries=3", "-Dsolr.ribbon.MaxAutoRetriesNextServer=3", "-Dsolr.ribbon.OkToRetryOnAllOperations=true","-Dsolr.ribbon.ServerListRefreshInterval=2000", "-Dsolr.ribbon.ClientClassName=com.assetcontrol.acx.persistence.search.query.solr.HttpLoadBalancedSearchClient", "-Dsolr.ribbon.eureka.enabled=false"]
+          env:
+#            - name: ALLOWED_HOSTS
+#              value: "."
+#            - name: PIDFILE_PATH
+#              value: "/dev/null"
+            - name: DATA_LINEAGE_SERVICE_BASE_URL
+              value: "http://ac-dl-read.uat01.svc.cluster.local:9009"
+            - name: BDMS_PERSISTENCE_UNIT  # if you don't set this property, you will get relation all_sequences NOT found
+              value: "BDMS_PostgresPersistenceUnit"
+            - name: AUTH_SERVICE_URL
+              value: "http://auth-service.uat01.svc.cluster.local:9005"
+            - name: ISSUE_SERVICE_URL
+              value: "http://issue-service.uat01.svc.cluster.local:9021/issue-service"
+            - name: DATASET_SERVICE_URL
+              value: "http://data-sets-service.uat01.svc.cluster.local:9011"
+            - name: MODEL_FOLDER
+              value: "/opt/docker/model"
+            - name: DB_DRIVER
+              value: "oracle.jdbc.OracleDriver"
+#            - name: JPA_UNIT
+#              value: "PostgresPersistenceUnit"  
+            - name: DB_USER
+              value: "acdba"
+            - name: DB_URL
+              value: "jdbc:oracle:thin:@santac2.acx-sandbox.net:1521/ORCL"
+            - name: CONFIGURATION_STORE
+              value: "POSTGRESQL"
+            - name: AC_HOST
+              value: "santac2.acx-sandbox.net"
+            - name: AC_INST
+              value: "acdba"
+            - name: AC_USER
+              value: "acdba"
+            - name: USE_OVERRIDE
+              value: "true"
+            - name: CHANGELOG_ENABLED
+              value: "true"
+            - name: BDMS_DB_DRIVER
+              value: "org.postgresql.Driver"
+            - name: BDMS_DB_URL
+              value: "jdbc:postgresql://postgresuat01.acx-sandbox.net:5432/bdms_db" #use the same as bdms-service
+            - name: BDMS_DB_EVOLUTIONS_ENABLED
+              value: "true"
+            - name: BDMS_DB_USER
+              value: "acdba"
+            - name: DATA_LINEAGE_SERVICE_AUTH_TOKEN
+              value: "none"
+            #ALPHA SETTINGS
+            - name: BDMS_SERVICE
+              value: "ACX"
+            - name: CASSANDRA_HOSTS
+              value: "cassandra1.uat.acx-sandbox.net:9042,cassandra2.uat.acx-sandbox.net:9042,cassandra3.uat.acx-sandbox.net:9042,cassandra4.uat.acx-sandbox.net:9042"
+            - name: ACX_CASSANDRA_KEYSPACE
+              value: "acx124uat01jan10"
+            - name: SOLR_ENDPOINTS
+              value: "solr881.uat.acx-sandbox.net:8983"
+            - name: SOLR_COLLECTION
+              value: "historyQA"
+            # Model synchronization
+            #- name: BDMS_INSTANCE_ID
+            #  value: "ops360uat01ACX"
+            #- name: SYNC_MODE
+            #  value: "SECONDARY"
+            #- name: KAFKA_BROKER
+            #  value: "kafka1.uat.acx-sandbox.net:9092,kafka2.uat.acx-sandbox.net:9092,kafka3.uat.acx-sandbox.net:9092"
+            
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: oracle-db-credentials
+                  key: password
+
+            - name: BDMS_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-db-credentials
+                  key: password
+
+            - name: AC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: ac-server-credentials
+                  key: password
+
+            - name: AUTH_SERVICE_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: auth-service-token
+                  key: token
+            - name: ISSUE_SERVICE_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: issue-service-token
+                  key: token
+#            - name: DATA_LINEAGE_SERVICE_AUTH_TOKEN
+#              valueFrom:
+#                secretKeyRef:
+#                  name: data-lineage-service-token
+#                  key: token
+            - name: KEYSTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: auth-keystore-credentials
+                  key: password
+
+          ports:
+            - containerPort: 9000
+              name: http
+          volumeMounts:
+            - name: bdms-acx-auth-keystore
+              mountPath: "/opt/docker/conf/auth"
+              readOnly: true
+            - name: bdms-service-acx-volume
+              mountPath: /opt/docker/conf/external
+      restartPolicy: Always
+      volumes:
+        - name: bdms-acx-auth-keystore
+          secret:
+            secretName: auth-keystore
+            items:
+              - key: keystore.jks
+                path: keystore.jks
+        - name: bdms-service-acx-volume
+          configMap:
+            name: bdms-service-acx
+

@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: acx-streaming-server
+  namespace: ops360
+data:
+  application.conf: |-
+    include "/acx/config/common/core.conf"
+
+    StreamingServer {
+      port = 50051
+      threads = 100
+      compress = true
+      changeAdoMaxNuOfDays = 90
+      useTransportSecurity = false
+      certificateFile = ""
+      privateKeyFile = ""
+    }
+    authConfig {
+      type  = "none" //none or ac
+      type = ${?STREAMING_AUTH_TYPE}
+      host = "temp.com/auth/api/v1/authenticate"
+      host = ${?STREAMING_AUTH_HOST}
+    }
+    BDMClient {
+      host = "temp.com/acx/"
+      host = ${?BDM_HOST}
+      connectTimeout = 10
+      connectTimeout = ${?BDM_CONNECT_TIMEOUT}
+      readTimeout = 10
+      readTimeout = ${?BDM_READ_TIMEOUT}
+      writeTimeout = 10
+      writeTimeout = ${?BDM_WRITE_TIMEOUT}
+    }
+  application.ini: |-
+    # -J-javaagent:/opt/agent/jmx_prometheus_javaagent-0.11.0.jar=9999:/opt/agent/config.yaml
+
+    # Setting -X directly (-J is stripped)
+    # -J-X
+
+    -J-XX:+UseG1GC
+    -J-Xmx1G
+    -J-Xms1G
+    -J-XX:+UseStringDeduplication
+    -J-XX:+OptimizeStringConcat
+
+    -J-XX:+HeapDumpOnOutOfMemoryError
+    -J-XX:HeapDumpPath=/acx/heap/java_pid<pid>.hprof
+    -J-XX:+UseGCOverheadLimit
+
+    # Add additional jvm parameters
+    # -Dkey=val
+
+    -Dconfig.file=/acx/config/app/application.conf
+    -Darchaius.configurationSource.additionalUrls=file:///acx/config/common/apache.solr.properties
+
+    # Log4j2 Configuration
+    -Dlog4j2.configurationFile=/acx/config/common/log4j2.xml
+    -Dlog4j2.disable.jmx=true
+
+    # Hazelcast Configuration
+    -Dhazelcast.shutdownhook.policy=GRACEFUL
+    -Dhazelcast.logging.type=log4j2
+
+    # Don't run the java version check
+    # -no-version-check
+
+    # enabling debug and sending -d as app argument
+    # the '--' prevents app-parameter swallowing when
+    # using a reserved parameter. See #184
+    # -d -- -d
+    -- -d64
+
+

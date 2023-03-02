@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: primecloud-ingress
+  namespace: primecloud
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+spec:
+  tls:
+  - hosts:
+    - pgadmin.primecloud.acx-sandbox.net
+    - hdfs-dashboard.primecloud.acx-sandbox.net
+  rules:
+    - host: pgadmin.primecloud.acx-sandbox.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: pgadmin
+                port:
+                  number: 80
+    - host: hdfs-dashboard.primecloud.acx-sandbox.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hdfs-namenode 
+                port:
+                  number: 9870
+

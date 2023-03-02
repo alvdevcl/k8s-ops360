@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: loi-normalization-service
+  name: loi-normalization-service
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loi-normalization-service
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: loi-normalization-service
+    spec:
+      containers:
+        - name: loi-normalization-service
+          image: "ac-m2repo-prod:5000/ac-normalization-service:1.0.1-SNAPSHOT-11"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ac-server.host
+              value: "santac2.acx-sandbox.net"
+            - name: ac-server.port
+              value: "22"
+            - name: ac-server.user
+              value: "acdba"
+            - name: ac-server.password
+              value: "welcome"
+            - name: ac-server.system-path
+              value: "/home/acdba/ac"
+            - name: ac-server.system-path
+              value: "/home/acdba/ac"
+            - name: ac-server.tmp-path
+              value: "/tmp"
+            - name: ac.bdms.url
+              value: "http://bdms-service.uat01.svc.cluster.local:6969"
+            - name: ac.dataset.url
+              value: "http://data-sets-service.uat01.svc.cluster.local:9011"
+            - name: PROCESS_TRACKING_URL
+              value: "http://process-tracking.uat01.svc.cluster.local:8090/api/v1/process"
+            - name: PROCESS_TRACKING_ENABLED
+              value: "true"
+          ports:
+            - containerPort: 8080
+      restartPolicy: Always

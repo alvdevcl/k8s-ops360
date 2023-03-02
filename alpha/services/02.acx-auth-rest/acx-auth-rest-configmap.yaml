@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: acx-auth-rest
+  namespace: ops360
+data:
+  log4j2.xml: |-
+    <?xml version="1.0" encoding="UTF-8"?>
+    <Configuration status="warn" name="AcxAuthRest" packages="">
+      <Appenders>
+        <Console name="STDOUT" target="SYSTEM_OUT" follow="true">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%.30t] %-5p %c{1}:%L - %m%n" />
+        </Console>
+      </Appenders>
+      <Loggers>
+        <Logger name="org.springframework" level="WARN" />
+        <Logger name="org.hibernate" level="WARN" />
+        <Root level="${env:LOG_LEVEL:-INFO}">
+          <AppenderRef ref="STDOUT" />
+        </Root>
+      </Loggers>
+    </Configuration>
+
+

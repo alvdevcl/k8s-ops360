@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: spreadsheet-service
+  name: spreadsheet-service
+  namespace: uat01
+spec:
+  ports:
+    - name: http
+      port: 9000
+  selector:
+    app: spreadsheet-service

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: acx-auth
+  name: acx-auth-rest-service
+  namespace: ops360
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: acx-auth
+  type: ClusterIP
+

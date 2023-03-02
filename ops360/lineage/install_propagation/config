@@ -1,0 +1,8 @@
+#id of acdba user. Because this is the user that runs ac-dl-lpropagation
+
+AC_ID=1000 #userid of acdba user
+DOCKER_DIR=/home/acdba/propagation
+
+# Image of ac-dl-propagation
+AC_DL_PROPAGATION=ac-m2repo-prod:5000/ac-data-lineage-propagation-service:1.0.10-SNAPSHOT-3ce8bcfd8c6d8ef051c0c468c0ba57195744323b
+

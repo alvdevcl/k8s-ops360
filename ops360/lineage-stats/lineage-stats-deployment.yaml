@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: lineage-stats
+  name: lineage-stats
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lineage-stats
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: lineage-stats
+    spec:
+      initContainers:
+      - name: initkeyspace
+        image: cassandra
+        command:
+        - /bin/bash
+        - -c
+        - |
+          cqlsh cassandra1.uat.acx-sandbox.net -f /tmp/schema.cql
+        volumeMounts:
+        - name: config-volume
+          mountPath: "/tmp/schema.cql"
+          subPath: schema.cql
+          readOnly: true
+      containers:
+        - name: lineage-stats
+          image: ac-m2repo-prod:5000/ac-data-lineage-statistics-service:1.0.1-6799a6c92a66f92729767a0dedb7f050ecbbeb4a 
+          imagePullPolicy: IfNotPresent
+          args: ["-Dplay.filters.hosts.allowed.0=."]
+          env:
+            - name: CASSANDRA_KEYSPACE
+              value: "ops360uat01_lineage_stats"
+            - name: ALLOWED_HOSTS
+              value: "."
+            - name: BASE_URL_BDMS
+              value: "http://bdms-service.uat01.svc.cluster.local:6969"
+            - name: BASE_URL_DATASETS
+              value: "http://data-sets-service.uat01.svc.cluster.local:9011"
+            - name: ISSUE_SERVICE_URL
+              value: "http://issue-service.uat01.svc.cluster.local:9021"
+            - name: BASE_URL_LINEAGE
+              value: "http://ac-dl-read.uat01.svc.cluster.local:9009"
+            - name: BASE_URL_PROCESS_TRACKING
+              value: "http://process-tracking.uat01.svc.cluster.local:8090"
+            - name: AUTH_COOKIE_FILE
+              value: /opt/ac/conf/cookies.txt
+            - name: APPLICATION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: lineage-stats
+                  key: application-secret
+          args: ["-Dlogger.file=/opt/ac/conf/logback.xml", "-Dplay.server.http.idleTimeout=900s"]
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - mountPath: /opt/ac/conf/application.conf
+              name: config-volume
+              subPath: application.conf
+            - mountPath: /opt/ac/conf/logback.xml
+              name: config-volume
+              subPath: logback.xml
+            - mountPath: /opt/ac/conf/cookies.txt
+              name: config-volume
+              subPath: cookies.txt
+      restartPolicy: Always
+      volumes:
+        - name: config-volume
+          configMap:
+            name: lineage-stats
+            items:
+              - key: application.conf
+                path: application.conf
+              - key: logback.xml
+                path: logback.xml
+              - key: schema.cql
+                path: schema.cql
+              - key: cookies.txt
+                path: cookies.txt

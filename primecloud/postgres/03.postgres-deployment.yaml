@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql-db
+  namespace: primecloud
+spec:
+  selector:
+    matchLabels:
+      app: postgresql-db
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: postgresql-db
+    spec:
+      containers:
+      - name: postgresql-db
+        image: postgres:14
+        imagePullPolicy: Always
+        env:
+          - name: POSTGRES_PASSWORD
+            value: admin
+          - name: PGDATA
+            value: /data/pgdata
+        volumeMounts:
+          - name: postgresql-db-init
+            mountPath: /docker-entrypoint-initdb.d/init.sql
+            subPath: init.sql
+          - name: postgresql-db-storage
+            mountPath: /data
+        ports:
+          - containerPort: 5432
+      volumes:
+       - name: postgresql-db-init
+         configMap:
+           name: postgresql-init-sql
+       - name: postgresql-db-storage
+         persistentVolumeClaim:
+           claimName: postgresql-db-pvc

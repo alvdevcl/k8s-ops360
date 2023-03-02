@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: data-processing-service
+  name: data-processing-service
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: data-processing-service
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: data-processing-service
+    spec:
+      containers:
+        - name: data-processing-service
+          image: "ac-m2repo-prod:5000/data-processing-service:1.1.0-SNAPSHOT-56"
+          imagePullPolicy: IfNotPresent
+          args: ["-Dplay.filters.hosts.allowed.0=."]
+          env:
+#            - name: ALLOWED_HOSTS
+#              value: "."
+            - name: BDMS_URL
+              value: "http://bdms-service.uat01.svc.cluster.local:6969"
+            - name: PROCESS_TRACKING_SERVICE_URL
+              value: "http://process-tracking.uat01.svc.cluster.local:8090"
+            - name: PROCESS_TRACKING_SERVICE_STAGE
+              value: "ENRICHMENT"
+            - name: DATASETS_SERVICE_URL
+              value: "http://data-sets-service.uat01.svc.cluster.local:9011"
+            - name: AC_HOST
+              value: "santac2.acx-sandbox.net"
+            - name: AC_INST
+              value: "acdba"
+            - name: AC_USER
+              value: "acdba"
+            - name: AC_PASSWORD
+              value: "welcome"
+            - name: LD_LIBRARY_PATH
+              value: "/opt/docker/plugins/lib"
+            - name: BDMS_AUTH_TOKEN
+              valueFrom:
+                  secretKeyRef:
+                    name: bdms-service-token
+                    key: token
+          volumeMounts:
+            - name: keystore
+              mountPath: /opt/app/conf/auth
+            - name: application-secrets
+              mountPath: /var/run/secrets
+      volumes:
+        - name: keystore
+          secret:
+            secretName: auth-keystore
+            items:
+              - key: keystore.jks
+                path: keystore.jks
+        - name: application-secrets
+          projected:
+            sources:
+              - secret:
+                  name: ac-server-credentials
+                  items:
+                    - key: password
+                      path: ac.api.password

@@ -1,0 +1,461 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: auth-service
+  name: auth-service
+  namespace: uat01 
+data:
+  bpm.json: |-
+    [
+      {
+        "name": "Equity All",
+        "description": " super user",
+        "dataview": "Equity View",
+        "states": [
+          {
+            "name": "suspect",
+            "visible": true,
+            "statusCodes": [
+              {
+                "code": 2,
+                "description": "generic suspect"
+              },
+              {
+                "code": 128,
+                "description": "OHLC failure"
+              },
+              {
+                "code": 129,
+                "description": "BMA failure"
+              },
+              {
+                "code": 130,
+                "description": "missing value"
+              },
+              {
+                "code": 140,
+                "description": "suspect"
+              }
+            ]
+          },
+          {
+            "name": "suspectsme",
+            "visible": true,
+            "statusCodes": [
+              {
+                "code": 192,
+                "description": "assigned to SME"
+              }
+            ]
+          },
+          {
+            "name": "suspectgen",
+            "visible": true,
+            "statusCodes": [
+              {
+                "code": 193,
+                "description": "assigned to General"
+              }
+            ]
+          },
+          {
+            "name": "corrected",
+            "visible": true,
+            "statusCodes": [
+              {
+                "code": 3,
+                "description": "corrected"
+              }
+            ]
+          },
+          {
+            "name": "validated",
+            "visible": true,
+            "statusCodes": [
+              {
+                "code": 4,
+                "description": "validated"
+              }
+            ]
+          },
+          {
+            "name": "final",
+            "visible": false,
+            "statusCodes": [
+              {
+                "code": 63,
+                "description": "accepted"
+              }
+            ]
+          }
+        ],
+        "processes": [
+          {
+            "name": "assign_sme",
+            "label": "assign SME",
+            "isValueEditable": false,
+            "requiresOtherUser": false,
+            "isCommentRequired": false,
+            "from": "suspect",
+            "to": "suspectsme"
+          },
+          {
+            "name": "assign_gen",
+            "label": "assign General",
+            "isValueEditable": false,
+            "requiresOtherUser": false,
+            "isCommentRequired": false,
+            "from": "suspect",
+            "to": "suspectgen"
+          },
+          {
+            "name": "correct_sme",
+            "label": "correct",
+            "isValueEditable": true,
+            "requiresOtherUser": false,
+            "isCommentRequired": true,
+            "from": "suspectsme",
+            "to": "corrected"
+          },
+          {
+            "name": "validate_sme",
+            "label": "validate",
+            "isValueEditable": false,
+            "requiresOtherUser": false,
+            "isCommentRequired": true,
+            "from": "suspectsme",
+            "to": "validated"
+          },
+          {
+            "name": "correct_gen",
+            "label": "correct",
+            "isValueEditable": true,
+            "requiresOtherUser": false,
+            "isCommentRequired": true,
+            "from": "suspectgen",
+            "to": "corrected"
+          },
+          {
+            "name": "validate_gen",
+            "label": "validate",
+            "isValueEditable": false,
+            "requiresOtherUser": false,
+            "isCommentRequired": true,
+            "from": "suspectgen",
+            "to": "validated"
+          },
+          {
+            "name": "accept_corrected",
+            "label": "accept",
+            "isValueEditable": false,
+            "requiresOtherUser": true,
+            "isCommentRequired": false,
+            "from": "corrected",
+            "to": "final"
+          },
+          {
+            "name": "reject_corrected",
+            "label": "reject",
+            "isValueEditable": false,
+            "requiresOtherUser": true,
+            "isCommentRequired": false,
+            "from": "corrected",
+            "to": "suspect"
+          },
+          {
+            "name": "accept_validated",
+            "label": "accept",
+            "isValueEditable": false,
+            "requiresOtherUser": true,
+            "isCommentRequired": false,
+            "from": "validated",
+            "to": "final"
+          },
+          {
+            "name": "reject_validated",
+            "label": "reject",
+            "isValueEditable": false,
+            "requiresOtherUser": true,
+            "isCommentRequired": false,
+            "from": "validated",
+            "to": "suspect"
+          }
+        ]
+      },
+      {
+        "name": "Bond All",
+        "description": " super user",
+        "dataview": "Bond View",
+        "states": [
+          {
+            "name": "suspect",
+            "visible": true,
+            "statusCodes": [
+              {
+                "code": 2,
+                "description": "generic suspect"
+              },
+              {
+                "code": 128,
+                "description": "OHLC failure"
+              },
+              {
+                "code": 129,
+                "description": "BMA failure"
+              },
+              {
+                "code": 130,
+                "description": "missing value"
+              },
+              {
+                "code": 140,
+                "description": "suspect"
+              }
+            ]
+          },
+          {
+            "name": "suspectsme",
+            "visible": true,
+            "statusCodes": [
+              {
+                "code": 192,
+                "description": "assigned to SME"
+              }
+            ]
+          },
+          {
+            "name": "suspectgen",
+            "visible": true,
+            "statusCodes": [
+              {
+                "code": 193,
+                "description": "assigned to General"
+              }
+            ]
+          },
+          {
+            "name": "corrected",
+            "visible": true,
+            "statusCodes": [
+              {
+                "code": 3,
+                "description": "corrected"
+              }
+            ]
+          },
+          {
+            "name": "validated",
+            "visible": true,
+            "statusCodes": [
+              {
+                "code": 4,
+                "description": "validated"
+              }
+            ]
+          },
+          {
+            "name": "final",
+            "visible": false,
+            "statusCodes": [
+              {
+                "code": 63,
+                "description": "accepted"
+              }
+            ]
+          }
+        ],
+        "processes": [
+          {
+            "name": "assign_sme",
+            "label": "assign SME",
+            "isValueEditable": false,
+            "requiresOtherUser": false,
+            "isCommentRequired": false,
+            "from": "suspect",
+            "to": "suspectsme"
+          },
+          {
+            "name": "assign_gen",
+            "label": "assign General",
+            "isValueEditable": false,
+            "requiresOtherUser": false,
+            "isCommentRequired": false,
+            "from": "suspect",
+            "to": "suspectgen"
+          },
+          {
+            "name": "correct_sme",
+            "label": "correct",
+            "isValueEditable": true,
+            "requiresOtherUser": false,
+            "isCommentRequired": true,
+            "from": "suspectsme",
+            "to": "corrected"
+          },
+          {
+            "name": "validate_sme",
+            "label": "validate",
+            "isValueEditable": false,
+            "requiresOtherUser": false,
+            "isCommentRequired": true,
+            "from": "suspectsme",
+            "to": "validated"
+          },
+          {
+            "name": "correct_gen",
+            "label": "correct",
+            "isValueEditable": true,
+            "requiresOtherUser": false,
+            "isCommentRequired": true,
+            "from": "suspectgen",
+            "to": "corrected"
+          },
+          {
+            "name": "validate_gen",
+            "label": "validate",
+            "isValueEditable": false,
+            "requiresOtherUser": false,
+            "isCommentRequired": true,
+            "from": "suspectgen",
+            "to": "validated"
+          },
+          {
+            "name": "accept_corrected",
+            "label": "accept",
+            "isValueEditable": false,
+            "requiresOtherUser": true,
+            "isCommentRequired": false,
+            "from": "corrected",
+            "to": "final"
+          },
+          {
+            "name": "reject_corrected",
+            "label": "reject",
+            "isValueEditable": false,
+            "requiresOtherUser": true,
+            "isCommentRequired": false,
+            "from": "corrected",
+            "to": "suspect"
+          },
+          {
+            "name": "accept_validated",
+            "label": "accept",
+            "isValueEditable": false,
+            "requiresOtherUser": true,
+            "isCommentRequired": false,
+            "from": "validated",
+            "to": "final"
+          },
+          {
+            "name": "reject_validated",
+            "label": "reject",
+            "isValueEditable": false,
+            "requiresOtherUser": true,
+            "isCommentRequired": false,
+            "from": "validated",
+            "to": "suspect"
+          }
+        ]
+      }
+    ]
+  dataviews.json: |-
+    [
+      {
+        "name": "IDC_APEX View",
+        "description": "IDC_APEX View"
+      },
+      {
+        "name": "NORMALIZATION_N0 View",
+        "description": "NORMALIZATION_N0 View"
+      },
+      {
+        "name": "CONSOLIDATION_C0 View",
+        "description": "CONSOLIDATION_C0 View"
+      },
+      {
+        "name": "CONSOLIDATION_C0 Admin View",
+        "description": "CONSOLIDATION_C0 Admin View"
+      },
+      {
+        "name": "IDC_APEX Admin View",
+        "description": "IDC_APEX Admin View"
+      }
+    ]
+  services.json: |-
+    [
+      {
+        "name": "AUTHENTICATION.ALL",
+        "description": "Full access to Authentication & Authorization service"
+      },
+      {
+        "name": "AUTHENTICATION.SERVICES",
+        "description": "Access to Services API for Authentication & Authorization service"
+      },
+      {
+        "name": "AUTHENTICATION.DATAVIEWS",
+        "description": "Access to Dataviews API for Authentication & Authorization service"
+      },
+      {
+        "name": "AUTHENTICATION.ROLES",
+        "description": "Access to Roles API for Authentication & Authorization service"
+      },
+      {
+        "name": "AUTHENTICATION.USERS",
+        "description": "Access to Users API for Authentication & Authorization service"
+      },
+      {
+        "name": "AUTHENTICATION.BPM",
+        "description": "Access to BPM API for Authentication & Authorization service"
+      },
+      {
+        "name": "ACSELECT.READ",
+        "description": "Access for reading AC Select data"
+      },
+      {
+        "name": "ACSELECT.ALL",
+        "description": "Access for reading and writing AC Select data"
+      },
+      {
+        "name": "OPS.ACQUISITION",
+        "description": "Access for Ops360 Enrichment data"
+      },
+      {
+        "name": "OPS.ENRICHMENT",
+        "description": "Access for Ops360 Enrichment data"
+      },
+      {
+        "name": "OPS.DISTRIBUTION",
+        "description": "Access for Ops360 Enrichment data"
+      },
+      {
+        "name": "OPS.CLEANSING",
+        "description": "Access for Ops360 Enrichment data"
+      },
+      {
+        "name": "DATAMODEL.ADMIN.DATAVIEWS",
+        "description": "View Data Model configuration"
+      },
+      {
+        "name": "DATAMODEL.ADMIN.RULES",
+        "description": "Configure attribute derivation and validation rules"
+      },
+      {
+        "name": "DATAMODEL.ADMIN.ALL",
+        "description": "Full access to data model configuration"
+      },
+      {
+        "name": "BDMS.ALL",
+        "description": "Full access to bdms service"
+      },
+      {
+        "name": "DCIS.ALL",
+        "description": "DCIS.ALL"
+      },
+      {
+        "name": "TASKS.ALL",
+        "description": "Full access to Task Service"
+      }
+    ]
+
+

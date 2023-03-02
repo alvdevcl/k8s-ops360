@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: tsv-manager-service
+  name: tsv-manager-service
+  namespace: uat01
+spec:
+  ports:
+    - name: http
+      port: 9082
+      targetPort: 9000
+  selector:
+    app: tsv-manager
+

@@ -1,0 +1,32 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: cassandra-web
+  name: cassandra-web
+  namespace: primecloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cassandra-web
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: cassandra-web
+    spec:
+      containers:
+        - name: cassandra-web
+          image: nuvo/docker-cqlsh 
+          imagePullPolicy: Always
+          env:
+            - name: CQLSH_HOST 
+              value: "cassandra.primecloud.svc.cluster.local"
+            - name: CQLSH_PORT
+              value: "9042" 
+          ports:
+            - containerPort: 3000
+      restartPolicy: Always

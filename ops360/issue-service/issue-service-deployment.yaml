@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: issue-service
+  name: issue-service
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: issue-service
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: issue-service
+    spec:
+      containers:
+        - name: issue-service
+          image: ac-m2repo-prod:5000/issue-service:1.1.2
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: AUTHENTICATION_ENABLED
+              value: "false"
+            - name: WFE_PATH
+              value: "/opt/app/workflowengine"
+            - name: BDMS_SERVICE_URL
+              value: "http://bdms-service.uat01.svc.cluster.local:6969/ac"
+            - name: DATASETS_SERVICE_URL
+              value: "http://datasets-service.uat01.svc.cluster.local:9011"
+            - name: DATASETS_AUTH_TOKEN
+              value: "none"
+            - name: AC_HOST
+              value: "santac2.acx-sandbox.net"
+            - name: AC_INST
+              value: "acdba"
+            - name: AC_USER
+              value: "acdba"
+            - name: AC_PASSWORD
+              value: "welcome"
+            - name: USER
+              value: "1000"   
+            - name: BDMS_AUTH_TOKEN
+              valueFrom:
+                 secretKeyRef:
+                   name: bdms-service-token
+                   key: token
+            - name: DB_DRIVER
+              value: "org.postgresql.Driver"
+            - name: DB_URL
+              value: "jdbc:postgresql://postgresuat01.acx-sandbox.net:5432/issue_service_db"
+            - name: DB_USER
+              value: "acdba"
+            - name: KEYSTORE_FILE
+              value: "/opt/app/conf/auth/keystore.jks"
+          args: ["-Dplay.http.context=/"]
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+            - mountPath: /opt/app/conf/auth
+              name: keystore
+            - name: application-secrets
+              mountPath: /var/run/secrets
+            - mountPath: /opt/app/workflowengine/conf
+              name: nfspathshare-wfe
+
+            - mountPath:  /home/user/app/tasks 
+              name: tasks-folder
+            - mountPath:  /home/user/app/cache
+              name: cache-folder
+      restartPolicy: Always
+      volumes:
+        - name: keystore
+          secret:
+            secretName: "auth-keystore"
+            items:
+              - key: keystore.jks
+                path: keystore.jks
+        - name: application-secrets
+          projected:
+            sources:
+              - secret:
+                  name: postgres-db-credentials
+                  items:
+                    - key: password
+                      path: db.default.password
+
+        - name: nfspathshare-wfe
+          persistentVolumeClaim:
+            claimName: wfe-pvc #name of the wfe pvc
+
+        - name: tasks-folder
+          emptyDir: {}
+        - name: cache-folder
+          emptyDir: {}

@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: task-service
+  name: task-service
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: task-service
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: task-service
+    spec:
+      initContainers:
+      - name: initkeyspace
+        image: cassandra
+        command:
+        - /bin/bash
+        - -c
+        - |
+          cqlsh cassandra1.uat.acx-sandbox.net -f /work-dir/schema.cql
+        volumeMounts:
+        - name: config-volume
+          mountPath: "/work-dir"
+          readOnly: true
+      containers:
+        - name: task-service
+          image: ac-m2repo-prod:5000/ac-task-service:1.0.7 
+          args: ["-Dplay.filters.hosts.allowed.0=."]
+          env:
+            - name: ALLOWED_HOSTS
+              value: "."
+            - name: CASSANDRA_HOST
+              value: "cassandra1.uat.acx-sandbox.net"
+            - name: APPLICATION_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: task-service
+                  key: application-secret
+            - name: URL_EXECUTE_SCRIPTS
+              value: "http://script-executor.uat01.svc.cluster.local:9016/v1/execute"
+            - name: URL_OPTIONS_SCRIPTS
+              value: "http://script-executor.uat01.svc.cluster.local:9016/v1/options"
+            - name: URL_EXECUTE_LINEAGE_STATS
+              value: "http://lineage-stats.uat01.svc.cluster.local:9014/tasks/status-transitions"
+            - name: URL_OPTIONS_LINEAGE_STATS
+              value: "http://lineage-stats.uat01.svc.cluster.local:9014/tasks/options"
+            - name: URL_EXECUTE_BATCH_PUBLISHER
+              value: "http://batch-publisher.uat01.svc.cluster.local:9017/tasks/run"
+            - name: URL_OPTIONS_BATCH_PUBLISHER
+              value: "http://batch-publisher.uat01.svc.cluster.local:9017/tasks/options"              
+            - name: TASK_RETRY_POLICY_MAX_ATTEMPTS
+              value: "0"
+            - name: AUTHENTICATION_ENABLED
+              value: "true"
+            - name: KEYSTORE_FILE
+              value: "/opt/ac/conf/auth/keystore.jks"
+            - name: COOKIE_SCRIPTS
+              value: "W3sidXNlcklkIjoidGVjaG5pY2FsIiwic2VydmljZU5hbWUiOiJTRVMuQUxMIiwidGltZU9mSXNzdWUiOjE2MTczNzUwNTcuNDc0MDAwMDAwLCJzaWduYXR1cmUiOiJNRVVDSUZIalkwREl5VW5nbXZzTE95Q3FxSkp2TndoMjJDT3dIeVZ0Rm5zNFFLcWZBaUVBbXNaZEFkNWtzemtqclV4aXUvYzNDdDFzOGl3QlIvQ21wblZoaStqQ2hJTT0iLCJ0ZWNobmljYWwiOmZhbHNlfV0="
+            - name: KAFKA_SERVERS
+              value: "kafka1.uat.acx-sandbox.net:9092"
+            - name: KAFKA_GROUP_ID
+              value: "task-service"
+            - name: KAFKA_TOPIC
+              value: "ops360uat01_task_service_test_topic"
+            - name: PROCESS_TRACKING_ENABLED
+              value: "true"              
+
+          ports:
+            - containerPort: 9000
+          volumeMounts:
+
+            - mountPath: /opt/ac/conf/logback.xml
+              name: config-volume
+              subPath: logback.xml
+
+            - name: task-service-auth-keystore
+              mountPath: "/opt/ac/conf/auth"
+              readOnly: true
+
+            - name: config-volume
+              mountPath: "/work-dir"
+              readOnly: true
+
+      restartPolicy: Always
+      volumes:
+        - name: config-volume
+          configMap:
+            name: task-service
+            items:
+              - key: logback.xml
+                path: logback.xml
+              - key: schema.cql
+                path: schema.cql
+               
+        - name: task-service-auth-keystore
+          secret:
+            secretName: auth-keystore
+            items:
+              - key: keystore.jks
+                path: keystore.jks

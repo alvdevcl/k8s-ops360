@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: alpha-publisher
+  name: alpha-publisher
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alpha-publisher
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: alpha-publisher
+    spec:
+      containers:
+        - name: alpha-publisher
+          image: ac-m2repo-prod:5000/publisher-service:2.0.1-SNAPSHOT-14 
+#          image: ac-m2repo-prod:5000/publisher-service:2.0.0-SNAPSHOT-220
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: LOGGING_CONFIG
+              value: "/home/ac/publisher/config/logback.xml"
+          ports:
+            - containerPort: 8085 
+              name: http
+          volumeMounts:
+            - name: alpha-publisher-volume
+              mountPath: /home/ac/publisher/config
+      restartPolicy: Always
+
+      volumes:
+        - name: alpha-publisher-volume
+          configMap:
+            name: alpha-publisher

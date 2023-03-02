@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: alpha-publisher-service
+  name: alpha-publisher-service
+  namespace: uat01
+spec:
+  ports:
+    - name: http
+      port: 8085
+  selector:
+    app: alpha-publisher
+

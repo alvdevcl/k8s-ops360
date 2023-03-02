@@ -1,0 +1,96 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: acx-fastapi
+    cache-service: hazelcast-fastapi
+    log-topic: logs.app.acx.fastapi
+    suite: acx
+  name: acx-fastapi
+  namespace: ops360
+spec:
+  selector:
+    matchLabels:
+      app: acx-fastapi
+      cache-service: hazelcast-fastapi
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape_port: "9999"
+        prometheus.io/should_be_scraped: "true"
+      creationTimestamp: null
+      labels:
+        app: acx-fastapi
+        cache-service: hazelcast-fastapi
+        keyspace: acx123
+        log-topic: logs.app.acx.fastapi
+    spec:
+      containers:
+      - command:
+        - bash
+        - -ec
+        - |
+          cp /acx/config/app/* /opt/docker/conf
+
+          # Startup
+          bin/acx-fast-api
+        env:
+        - name: ACX_STREAMING_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: streaming-credentials
+        - name: ACX_STREAMING_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: streaming-credentials
+        - name: CASSANDRA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: cassandra-credentials
+        - name: CASSANDRA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: cassandra-credentials
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: status.podIP
+        - name: LOG_KAFKA_TOPIC
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['log-topic']
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: 187368916732.dkr.ecr.us-east-1.amazonaws.com/acx-fast-api:1.2.3-RC1.76
+        imagePullPolicy: Always
+        name: acx-fastapi
+        ports:
+        - containerPort: 9999
+          name: jmxexporter
+          protocol: TCP
+        - containerPort: 9000
+          name: rest
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /acx/config/app
+          name: acx-fastapi-config-volume
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      - name: aws-uat-ecr-cred
+      restartPolicy: Always
+      serviceAccount: acx-sa
+      serviceAccountName: acx-sa
+      volumes:
+      - configMap:
+          name: acx-fastapi
+        name: acx-fastapi-config-volume
+

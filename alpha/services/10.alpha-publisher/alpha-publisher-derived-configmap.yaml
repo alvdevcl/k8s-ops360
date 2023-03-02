@@ -1,0 +1,344 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: alpha-publisher-derived
+  name: alpha-publisher-derived
+  namespace: uat01
+data:
+  application.properties: |-
+    spring.main.allow-bean-definition-overriding=true
+    spring.profiles.active=prod
+    acx.publisher.consumption.mode=kafka
+    # ***************** AC Plus settings *************************
+    ac.api.host=santac2.acx-sandbox.net
+    ac.api.installation=acdba
+    ac.api.user=acdba
+    ac.api.password=welcome
+    ac.api.queries-max=4
+
+    # address for AC Server notifier connection
+    ac.api.notifier-address=123484451
+
+    # ***************** Kafka settings *************************
+    kafka.bootstrapServers=kafka1.uat.acx-sandbox.net:9092
+    kafka.clientId=publisher-ops360-qa
+    kafka.groupId=console-producer-ops360-qa-2
+
+    # for alpha-plus
+    kafka.topic.transaction=ac.update.txn.acx123uat02feb09_ops360
+    kafka.topic.metadata=ac.update.metadata.acx123uat02feb09_ops360
+    kafka.topic.derived=ac.update.derived.acx123uat02feb09_ops360
+    kafka.topic.changedData=ac.update.txn.acx123uat02feb09_ops360
+    kafka.topic.activation=ac.update.txn.acx123uat02feb09_ops360
+    # placeholder for new keyspace: acx123ops360qa_09Feb2022
+    # original : acx123uat02nov16_ops360
+
+
+    # for derived service
+    kafka.topic.derived-task=alveo_derivedTask_ops360
+
+    kafka.publish-timeout-sec=60
+    # 150 mb
+    kafka.max-message-size=157286400
+    # compression type for produced kafka messages. values: none, gzip, snappy, lz4
+    kafka.compression-type=lz4
+
+    # **** Kafka security *****
+
+    # type of security protocol used for communication with Kafka. Possible choices:
+    # NONE - no authentication
+    # BASIC - authentication by username/password
+    kafka.security.type=NONE
+    # kafka.security.username=
+    # kafka.security.password=
+
+    # ***************** Publisher settings *************************
+    # find active ado statement. runs on startup
+    #acx.publisher.metadata.configuration-file-path=file:config/configuration_ado_prefix.json
+    acx.publisher.metadata.configuration-file-path=file:config/configuration_active_attribute.json
+    acx.publisher.metadata.postprocessing-file-path=file:config/postprocessing_active_attribute.json
+    acx.publisher.scheduler.derived.task-run-period-ms=5000
+    acx.publisher.scheduler.derived.intermediate-collection-delay-ms=60000
+    acx.publisher.timeseries-batch-size=1000
+    acx.publisher.transaction.object-operation.filter.LIST=PUBLISH
+    acx.publisher.transaction.object-operation.filter.LIST_CONTENTS=PUBLISH
+    acx.publisher.scheduler.hazelcast-derived-tasks-queue = derivedTasks
+
+    #***************** Collector settings *************************
+    # number of threads used to collect and send derived data
+    acx.publisher.collector.threads=1
+    # Base URL of ACX web service providing merkle tree data
+    acx.publisher.collector.merkle-tree-service-url=http://acx-merkle-rest-service.uat01.svc.cluster.local:1080/v1
+    # ACX web service username and password
+    acx.publisher.collector.merkle-tree-service-username=merkler
+    acx.publisher.collector.merkle-tree-service-password=merklerpass
+    # relative paths to data service
+    acx.publisher.collector.merkle-tree-service-data-path=/merkletree
+    # relative paths to login endpoint
+    acx.publisher.collector.merkle-tree-service-login-path=/login
+    #Timeout(in milliseconds) for connection to ACX merkle tree service
+    acx.publisher.collector.acx-connect-timeout=3000
+    #Timeout(in milliseconds) for reading for ACX merkle tree service
+    acx.publisher.collector.acx-read-timeout=3000
+    #Maximum time(in milliseconds) that Collector allowed to spend calculating new Merkle trees
+    acx.publisher.collector.max-tree-calculation-time=1000
+
+    server.port=8054
+
+    schema.force-recreate = true
+    initialize-data = true
+    cassandra.contact-points = cassandra1.uat.acx-sandbox.net
+    cassandra.port = 9042
+    cassandra.keyspace = publisher
+    cassandra.base-packages = com.ac.publisher.persistence.cassandra
+    cassandra.schema-file = /home/ac/publisher/config/schema_create.cql
+
+
+    # ***************** Kafka consumer settings *************************
+    # for consumer of ac transaction data from replicator
+    kafka.consumer.bootstrapServers=kafka1.uat.acx-sandbox.net:9092
+    kafka.consumer.clientId=publisher-ops360
+    kafka.consumer.groupId=publisher-ops360-5
+    kafka.consumer.topic=alveo_txn_ops360
+    kafka.consumer.offset=latest
+    kafka.consumer.maxFetchBytes = 1024000
+    kafka.consumer.maxPollRecords = 10
+    kafka.consumer.sessionTimeoutMs = 30000
+    kafka.consumer.heartbeatIntervalMs = 10000
+
+    # hazelcast
+    hazelcast.queue.name = test-queue1
+    # hazelcast.address = 11.22.33.44
+    # hazelcast.port = 5702
+
+
+    # ***************** Changed Data properties *************************
+    acx.publisher.changed-data.kafka-time-out=2500
+    acx.publisher.changed-data.batch-size=1
+    acx.publisher.changed-data.batch-time-out=2000
+    acx.publisher.changed-data.thread-pool-size=1
+
+
+
+    #Which list types to publish (ADO,ADO_SUPER,UNKNOWN,STATIC_ATTRIBUTE,TIMESERIES_ATTRIBUTE)
+    acx.publisher.list-types-to-export=ADO,ADO_SUPER,UNKNOWN
+    acx.publisher.transaction.object-operation.filter.LIST=LISTS_FILTER
+    acx.publisher.transaction.object-operation.filter.LIST_CONTENTS=LISTS_FILTER
+  
+  logback.xml: |-
+    <?xml version="1.0" encoding="UTF-8"?>
+    <configuration scan="true" scanPeriod="30 seconds">
+        <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+        <appender name="FILE"
+                  class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{136} - %msg%n</pattern>
+            </encoder>
+            <file>log/publisher.log</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+                <fileNamePattern>log/publisher.log.%i</fileNamePattern>
+            </rollingPolicy>
+            <triggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+                <MaxFileSize>10MB</MaxFileSize>
+            </triggeringPolicy>
+        </appender>
+
+        <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+            <!-- encoders are assigned the type
+                ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+            <encoder>
+                <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{136} - %msg%n</pattern>
+            </encoder>
+        </appender>
+
+        <appender name="LOG_STASH" class="ch.qos.logback.core.rolling.RollingFileAppender">
+            <file>log/publisher.json</file>
+            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                <fileNamePattern>log/publisher.json.%d{yyyy-MM-dd}.gz</fileNamePattern>
+                <maxHistory>7</maxHistory>
+            </rollingPolicy>
+            <triggeringPolicy
+                    class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+                <MaxFileSize>50MB</MaxFileSize>
+            </triggeringPolicy>
+
+            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                <providers>
+                    <timestamp>
+                        <timeZone>UTC</timeZone>
+                    </timestamp>
+                    <pattern>
+                        <pattern>
+                            {
+                            "severity": "%level",
+                            "service": "${springAppName:-}",
+                            "trace": "%X{X-B3-TraceId:-}",
+                            "span": "%X{X-B3-SpanId:-}",
+                            "parent": "%X{X-B3-ParentSpanId:-}",
+                            "exportable": "%X{X-Span-Export:-}",
+                            "pid": "${PID:-}",
+                            "thread": "%thread",
+                            "class": "%logger{40}",
+                            "rest": "%message"
+                            }
+                        </pattern>
+                    </pattern>
+                </providers>
+            </encoder>
+        </appender>
+
+        <root level="DEBUG">
+            <appender-ref ref="FILE"/>
+        </root>
+
+        <root level="DEBUG">
+            <appender-ref ref="STDOUT"/>
+        </root>
+
+      <logger name="com.ac.publisher" level="DEBUG">
+            <appender-ref ref="STDOUT"/>
+        </logger>
+
+        <logger name="com.ac.publisher" level="DEBUG">
+            <appender-ref ref="LOG_STASH"/>
+        </logger>
+
+        <logger name="org.springframework" level="INFO"/>
+        <logger name="org.apache.kafka" level="INFO"/>
+        <logger name="TRACE_LOGGER" level="INFO">
+            <appender-ref ref="FILE"/>
+        </logger>
+        <logger name="com.ac.publisher.kafka.consumer" level="DEBUG"/>
+        <logger name="com.hazelcast.internal.partition.impl.PartitionStateManager" level="WARN"/>
+        <logger name="com.hazelcast.internal.partition.InternalPartitionService" level="WARN"/>
+        <logger name="com.hazelcast.internal.cluster.impl.MembershipManager" level="WARN"/>
+        <logger name="com.datastax.driver.core.Connection" level="WARN"/>
+        <logger name="TRACE_LOGGER" level="DEBUG" additivity="false">
+              <appender-ref ref="STDOUT"/>
+        </logger>
+    </configuration>
+  
+  schema_create.cql: |-
+    CREATE KEYSPACE IF NOT EXISTS {keyspace} WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+
+    CREATE TABLE IF NOT EXISTS {keyspace}.ado_active_store
+    (
+        ado_id text,
+        PRIMARY KEY (ado_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS {keyspace}.dependencies
+    (
+        ado_id_source   text,
+        store_id_source text,
+        ado_id_target   text,
+        store_id_target text,
+        PRIMARY KEY ((ado_id_target), ado_id_source, store_id_source, store_id_target)
+    );
+
+    CREATE TABLE IF NOT EXISTS {keyspace}.failed_dependencies
+    (
+        ado_id  text,
+        message text,
+        PRIMARY KEY (ado_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS {keyspace}.interfaces
+    (
+        id text,
+        number bigint,
+        name text,
+        security text,
+        PRIMARY KEY (id, number)
+    );
+
+    CREATE INDEX IF NOT EXISTS publisher_interfaces_number ON
+    {keyspace}.interfaces (number);
+
+    CREATE TABLE IF NOT EXISTS {keyspace}.tasks
+    (
+        ado_id text,
+        store_id text,
+        created_time timestamp,
+        updated_time timestamp,
+        transaction_time timestamp,
+        attempts smallint,
+        PRIMARY KEY (ado_id, store_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS {keyspace}.derived_list
+    (
+      list_id text,
+      list_result blob,
+      PRIMARY KEY (list_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS {keyspace}.derived_attribute
+    (
+        ado_id text,
+        attribute_id text,
+        value blob,
+        PRIMARY KEY (ado_id, attribute_id)
+    );
+
+  configuration_active_attribute.json: |-
+    {
+            "scope": {
+                    "attribute": {
+                            "id": "C0#ACX_STATUS",
+                            "value": "Y"
+                    }
+            },
+            "dependencyConfig": {
+                    "configurationAttribute": "C0#COMP_000",
+                    "sourceADO": "C0#COMP_000A",
+                    "sourceStore": "C0#COMP_000B",
+                    "targetStore": "C0#COMP_000C"
+            },
+            "filters": {
+                    "staticAttributes": [],
+                    "timeSeriesTrees": []
+            },
+            "scheduledObjects": []
+    }
+    {
+            "scope": {
+                    "attribute": {
+                            "id": "C0#ACX_STATUS",
+                            "value": "Y"
+                    }
+            },
+            "dependencyConfig": {
+                    "configurationAttribute": "C0#COMP_000",
+                    "sourceADO": "C0#COMP_000A",
+                    "sourceStore": "C0#COMP_000B",
+                    "targetStore": "C0#COMP_000C"
+            },
+            "filters": {
+                    "staticAttributes": [],
+                    "timeSeriesTrees": []
+            },
+            "scheduledObjects": []
+    }
+
+  postprocessing_active_attribute.json: |-
+    [
+      {
+        "type": "ADO_ATTRIBUTES",
+        "actions": [
+          "CHANGE_ACTIVE_SCOPE",
+          "CHANGE_CONFIG",
+          "CHANGE_ATTRIBUTES_FILTER_SCOPE"
+        ]
+      },
+      {
+        "type": "STATIC_ATTRIBUTE",
+        "operation": "DELETE",
+        "actions": [
+          "CHANGE_CONFIG"
+        ]
+      }
+    ]

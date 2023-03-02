@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: prime-replicator-server
+  name: prime-replicator-server
+  namespace: primecloud
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prime-replicator-server
+  serviceName: prime-replicator-rpc
+  template:
+    metadata:
+      labels:
+        app: prime-replicator-server
+    spec:
+
+      containers:
+        - name: replicator-server
+          image: ac-m2repo-prod:5000/prime/replicator-server:latest
+          imagePullPolicy: Always
+          env:
+            - name: INSTALLATION_NAME
+              value: "dev"
+            - name: DB_HOST
+              value: "postgresql-db.primecloud.svc.cluster.local"
+            - name: DB_PORT
+              value: "9400"
+            - name: DB_NAME
+              value: "prime"
+            - name: DB_USER
+              value: "prime"
+            - name: DB_PASSWORD
+              value: "acdba1"
+            - name: PUBLIC_NAME
+              value: "172.24.2.78"
+            - name: HDFS_LOG_HOST
+              value: "hdfs-namenode"
+            - name: HDFS_LOG_PORT
+              value: "9000"
+            - name: HDFS_ROOT
+              value: "/alveo/files/"
+          ports:
+            - containerPort: 9933
+          volumeMounts:
+            - name: prime-server-license-volume
+              mountPath: /home/prime/config/license.txt
+              subPath: license.txt
+      volumes:
+        - name: prime-server-license-volume
+          configMap:
+            name: prime-server-license
+      restartPolicy: Always

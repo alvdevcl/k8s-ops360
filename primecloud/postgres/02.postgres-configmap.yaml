@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgresql-init-sql
+  namespace: primecloud
+data:
+  init.sql: |
+    CREATE ROLE prime WITH
+       LOGIN
+       NOSUPERUSER
+       NOCREATEDB
+       NOCREATEROLE
+       INHERIT
+       NOREPLICATION
+       CONNECTION LIMIT -1
+       PASSWORD 'acdba1';
+      
+    CREATE DATABASE prime
+       WITH
+       OWNER = prime
+       ENCODING = 'UTF8'
+       CONNECTION LIMIT = -1
+       IS_TEMPLATE = False;

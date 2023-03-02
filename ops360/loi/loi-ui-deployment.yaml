@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: loi-ui
+  name: loi-ui
+  namespace: uat01
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loi-ui
+  strategy: 
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: loi-ui
+    spec:
+      containers:
+        - image: "ac-m2repo-prod:5000/loi-ui:0.1.0-68" 
+          imagePullPolicy: IfNotPresent
+          name: loi-ui
+          ports:
+            - containerPort: 8080

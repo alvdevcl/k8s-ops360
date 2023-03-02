@@ -1,0 +1,160 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: acx-common
+  namespace: ops360
+data:
+  apache.solr.properties: |-
+    solr.ribbon.listOfServers=http://solr.poc-demo.alveo-sandbox.net:8983
+    solr.ribbon.MaxAutoRetries=3
+    solr.ribbon.MaxAutoRetriesNextServer=3
+    solr.ribbon.OkToRetryOnAllOperations=true
+    solr.ribbon.ServerListRefreshInterval=2000
+    solr.ribbon.ClientClassName=com.assetcontrol.acx.persistence.search.query.solr.HttpLoadBalancedSearchClient
+    solr.ribbon.eureka.enabled=false
+  core.conf: |
+    CassandraConf {
+      username = ${?CASSANDRA_USERNAME}
+      password = ${?CASSANDRA_PASSWORD}
+      hosts = "cassandra.poc-demo.alveo-sandbox.net:9042"
+      keyspace = acx123 # give the correct name of the keyspace. if you created it manually using job, give it's name.
+      readConsistency = LOCAL_ONE
+      writeConsistency = LOCAL_ONE
+      retryPolicyMaxAttempts = 3
+      retryPolicyMaxAttempts = ${?CASSANDRA_RETRY_POLICY_MAX_ATTEMPTS}
+      timeout= 120000
+
+      // Start Build Configuration
+      build = "local"
+      createKeyspace = true # set this to false, if you have already manually init the database and this is not required.
+      initializeSearchIndexes = true
+      datacenter = "dc1"
+      // End Build Configuration
+
+      ExponentialRetryPolicy {
+        base = 10
+        exponent = 4
+        waitingLogThreshold = 1
+      }
+    }
+
+    AdosSplitting {
+      maxNuDays = 10
+      maxSnapshots = 30
+      lastEpsilon = 10
+    }
+
+    AsyncQueryProcessor {
+      batchSize = 2000
+      timeout = 70000
+    }
+
+    DerivedTimeSeries.segmentSize = 7
+
+    ExecuteAsync.parallelizationFactor = 100
+
+    TimeSeriesDao {
+      tsReadWaiting = 60000
+      startYear = 2000
+      useLatestTable = false
+    }
+
+    AdoHistory {
+      attributeTimeOut = 2000
+    }
+
+    SolrConf=apache.solr
+
+    SearchConfig {
+      // "DSESolr" | "ApacheSolr"
+      searchEngine = "ApacheSolr"
+      collection = "historyQA"
+    }
+
+    KafkaConfig {
+      kafka.bootstrap.servers = "http://kafka.poc-demo.alveo-sandbox.net:9092"
+      kafka.topic = "ac.index.acx123"
+      kafka.enable.idempotence = true
+      kafka.batch.size = 32768
+      kafka.linger.ms = 20
+      kafka.compression.type = "snappy"
+      kafka.max.request.size = 4000000
+      kafka.custom {
+        message.max.bytes = 2097152
+        max.request.size = 2097152
+      }
+      max.messages.batch = 1
+    }
+
+    acx.FastApi {
+      baseUrl = "http://acx-fastapi-service.ops360:9000"
+    }
+  hazelcast.yaml: |-
+    hazelcast:
+      group:
+        name: dev
+        password: dev-pass
+      network:
+        port:
+          auto-increment: true
+          port-count: 5
+          port: 5701
+        outbound-ports:
+          - 0
+        join:
+          multicast:
+            enabled: false
+          aws:
+            enable: false
+          kubernetes:
+            enabled: true
+            namespace: ops360
+            service-name: acx-hazelcast-member-service
+            service-port: 5701
+      map:
+        acxAttributes:
+          in-memory-format: OBJECT
+          async-fillup: true
+          statistics-enabled: true
+          quorum-ref: quorumname
+        acxTimeSeriesLabels:
+          in-memory-format: OBJECT
+          async-fillup: true
+          statistics-enabled: true
+          quorum-ref: quorumname
+  log4j2.xml: |-
+    <?xml version="1.0" encoding="UTF-8"?>
+    <Configuration status="warn" name="MyApp" packages="">
+      <Appenders>
+        <Console name="STDOUT_JSON" target="SYSTEM_OUT">
+          <JsonLayout complete="false" eventEol="true" compact="true" includeStacktrace="true" objectMessageAsJsonObject="false" stacktraceAsString="true"  properties="true">
+            <KeyValuePair key="timestamp" value="$${date:yyyy-MM-dd'T'HH:mm:ss.SSSZ}" />
+          </JsonLayout>
+        </Console>
+        <Console name="STDOUT" target="SYSTEM_OUT" follow="true">
+            <PatternLayout pattern="%X{event.id} %d{yyyy-MM-dd HH:mm:ss} [%.30t] %-5p %c{1}:%L - %m%n" />
+        </Console>
+      </Appenders>
+      <Loggers>
+        <Logger name="httpclient.wire" level="OFF" additivity="false" />
+        <Logger name="com.netflix" level="INFO" />
+        <Logger name="com.ac.publisher.model.merkle" level="INFO" />
+        <Logger name="com.assetcontrol.acx.persistence.cassandra.data.TimeSeriesInfoDao" level="INFO" />
+        <Logger name="log4j.logger.com.assetcontrol.acx.integration.plus.tm.nodegroup.kafka" level="INFO" />
+        <Logger name="log4j.logger.com.assetcontrol.acx.integration.plus.tm" level="INFO" />
+        <!-- avoid recursive logging -->
+        <Logger name="org.apache.kafka" level="WARN" />
+        <Root level="${env:LOG_LEVEL:-INFO}">
+          <AppenderRef ref="STDOUT" />
+        </Root>
+      </Loggers>
+    </Configuration>
+  solr.properties: |-
+    solr.ribbon.listOfServers=http://solr.poc-demo.alveo-sandbox.net:8983
+    solr.ribbon.MaxAutoRetries=3
+    solr.ribbon.MaxAutoRetriesNextServer=3
+    solr.ribbon.OkToRetryOnAllOperations=true
+    solr.ribbon.ServerListRefreshInterval=2000
+    solr.ribbon.ClientClassName=com.assetcontrol.acx.persistence.search.query.solr.HttpLoadBalancedSearchClient
+    solr.ribbon.eureka.enabled=false
+

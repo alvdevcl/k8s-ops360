@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: acx-plus
+    family: derived
+    log-topic: logs.app.acx.plus
+    suite: acx
+  name: acx-plus-derived
+  namespace: ops360
+spec:
+  selector:
+    matchLabels:
+      cache-service: hazelcast
+      family: derived
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape_port: "9999"
+        prometheus.io/should_be_scraped: "true"
+      labels:
+        app: acx-plus
+        cache-service: hazelcast
+        family: derived
+        group-id: acx123-DE
+        keyspace: acx123
+        log-topic: logs.app.acx.plus
+    spec:
+      containers:
+      - env:
+        - name: MERKLE_CONTROLLER_STORE_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: merkle-credentials
+        - name: MERKLE_CONTROLLER_STORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: merkle-credentials
+        - name: CASSANDRA_USERNAME
+          valueFrom:
+            secretKeyRef:
+              key: username
+              name: cassandra-credentials
+        - name: CASSANDRA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: password
+              name: cassandra-credentials
+        - name: LOG_KAFKA_TOPIC
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['log-topic']
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: AC_PLUS_TM_APP_CONFIG_FILE
+          value: /acx/config/app/application.conf
+        - name: HAZELCAST_CONFIG_FILE
+          value: /acx/config/common/hazelcast.yaml
+        image: 187368916732.dkr.ecr.us-east-1.amazonaws.com/acx-plus:1.2.3-RC1.2
+        imagePullPolicy: IfNotPresent
+        name: acx-plus
+        ports:
+        - containerPort: 5701
+          name: hazelcast-0
+          protocol: TCP
+        - containerPort: 5702
+          name: hazelcast-1
+          protocol: TCP
+        - containerPort: 5703
+          name: hazelcast-2
+          protocol: TCP
+        - containerPort: 5704
+          name: hazelcast-3
+          protocol: TCP
+        - containerPort: 5705
+          name: hazelcast-4
+          protocol: TCP
+        - containerPort: 9999
+          name: jmxexporter
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /acx/config/common
+          name: common-config-volume
+        - mountPath: /acx/config/app
+          name: acx-plus-config-volume
+        - mountPath: /opt/docker/conf
+          name: acx-plus-config-volume
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      - name: aws-uat-ecr-cred
+      restartPolicy: Always
+      serviceAccount: acx-sa
+      serviceAccountName: acx-sa
+      volumes:
+      - configMap:
+          name: acx-common
+        name: common-config-volume
+      - configMap:
+          name: acx-plus-derived
+        name: acx-plus-config-volume

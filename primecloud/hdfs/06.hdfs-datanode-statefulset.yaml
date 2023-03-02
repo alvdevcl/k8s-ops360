@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hdfs-datanode
+  namespace: primecloud
+spec:
+  selector:
+    matchLabels:
+      app: hdfs-datanode
+  replicas: 1
+  serviceName: hdfs-datanode
+  template:
+    metadata:
+      labels:
+        app: hdfs-datanode
+    spec:
+      containers:
+      - name: hdfs-datanode
+        image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+        imagePullPolicy: Always
+        env:
+         - name: CLUSTER_NAME
+           value: "hdfs-prime"
+        envFrom:
+         - configMapRef:
+             name: hdfs-hadoop-env
+        ports:
+        - containerPort: 9864
+          name: datanode-http
+        - containerPort: 9866
+          name: datanode-meta
+        volumeMounts:
+          - name: hdfs-datanode-storage
+            mountPath: /hadoop/dfs/data
+  volumeClaimTemplates:
+  - metadata:
+      name: hdfs-datanode-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: nfs-primecloud
+      resources:
+        requests:
+          storage: 50Gi

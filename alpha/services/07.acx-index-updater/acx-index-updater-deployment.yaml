@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: acx-index-updater
+    log-topic: logs.app.acx.indexupdater
+    suite: acx
+  name: acx-index-updater
+  namespace: ops360
+spec:
+  selector:
+    matchLabels:
+      app: acx-index-updater
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape_port: "9999"
+        prometheus.io/should_be_scraped: "true"
+      creationTimestamp: null
+      labels:
+        app: acx-index-updater
+        group-id: acx123-MD
+        log-topic: logs.app.acx.indexupdater
+    spec:
+      containers:
+      - env:
+        - name: LOG_KAFKA_TOPIC
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.labels['log-topic']
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        image: 187368916732.dkr.ecr.us-east-1.amazonaws.com/acx-index-updater:1.2.3-RC1.2
+        imagePullPolicy: IfNotPresent
+        name: acx-index-updater
+        ports:
+        - containerPort: 9999
+          name: jmxexporter
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /acx/config/app
+          name: acx-index-updater-volume
+        - mountPath: /opt/docker/conf
+          name: acx-index-updater-volume
+        - mountPath: /acx/config/common
+          name: common-config-volume
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+      - name: aws-uat-ecr-cred
+      restartPolicy: Always
+      volumes:
+      - configMap:
+          name: acx-index-updater
+        name: acx-index-updater-volume
+      - configMap:
+          name: acx-common
+        name: common-config-volume

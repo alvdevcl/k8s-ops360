@@ -1,0 +1,296 @@
+# Plese check the deployment file and k8s if this configmap
+# is referred. As we are using hostpath, these config maps are NOT 
+# relevant
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: core-ui
+  name: core-ui
+  namespace: uat01 
+data:
+  config.json: |-
+    {
+    "menuIcons": true,
+    "operationsDashboard": {
+        "pollingInterval": {
+        "statistics": 30000,
+        "processes": 30000,
+        "processDetails": 5000
+        }
+    },
+    "endpoints": {
+        "authenticate": "/api/v1/authenticate",
+        "changePassword": "/api/v1/password",
+        "openId": "auth/api/v1/openid"
+    },
+    "url": {
+        "headerIframeURL": "/header",
+        "authServiceURL": "/auth",
+        "landingPageURL": "/ops360",
+        "parentKey": "parent",
+        "originKey": "origin"
+    },
+    "cookie": {
+        "tokenKey": "rights",
+        "tokenUnauthorizedValue": "unauthorized"
+    },
+    "browsing": {
+        "timeSeriesDefaultRange": "1Y",
+        "isSpreadSheetServiceSupported": true,
+        "isLineageServiceSupported": true
+    },
+    "acquisition": {
+        "programNames": {
+        "getCompany": ["BB_COMPANY"],
+        "getHistory": ["BB_GLOBAL", "BB_UNIQUE", "CUSIP", "ISIN", "SEDOL", "TICKER"]
+        }
+    },
+    "helperSites": [
+        {
+        "url": "/learn",
+        "title": "Learn",
+        "variant": "whitish",
+        "src": "https://asset-control.docebosaas.com/learn"
+        },
+        {
+        "url": "/clientPortal",
+        "title": "Client Portal",
+        "variant": "yellowish",
+        "src": "https://portal.asset-control.com/jira/servicedesk/customer/user/login?destination=portals&logout=true"
+        }
+    ]
+    }
+
+  navigation.json: |-
+    [
+        {
+            "title": "Operations",
+            "pages": [
+                {
+                    "title": "Dashboard ",
+                    "service": ["AUTHENTICATION.ALL", "OPS.SYSTEM"],
+                    "colorStart": "warning",
+                    "colorEnd": "secondary",
+                    "url": "/ops360",
+                    "icon": "dashboard"
+                },
+                {
+                    "title": "Acquisition",
+                    "service": ["AUTHENTICATION.ALL", "OPS.ACQUISITION"],
+                    "url": "/ops360/?ACQUISITION=ALL&selectedStage=ACQUISITION",
+                    "icon": "acquisition"
+                },
+                {
+                    "title": "Enrichment",
+                    "service": ["AUTHENTICATION.ALL", "OPS.DERIVATION"],
+                    "url": "/ops360/?ENRICHMENT=ALL&selectedStage=ENRICHMENT",
+                    "icon": "enrichment"
+                },
+                {
+                    "title": "Exceptions",
+                    "service": ["AUTHENTICATION.ALL", "OPS.CLEANSING"],
+                    "url": "/cleansing/"
+                },
+                {
+                    "title": "Distribution",
+                    "service": ["AUTHENTICATION.ALL", "OPS.DISTRIBUTION"],
+                    "url": "/ops360/?DISTRIBUTION=ALL&selectedStage=DISTRIBUTION"
+                }
+            ]
+        },
+        {
+            "title": "Onboarding  ",
+            "pages": [
+                {
+                    "title": "Lists of Interests",
+                    "service": [
+                        "AUTHENTICATION.ALL"
+                    ],
+                    "url": "/loi/",
+                    "icon": "onboarding"
+                },
+                {
+                    "title": "Bloomberg   ",
+                    "service": [
+                        "AUTHENTICATION.ALL",
+                        "ACSELECT.ALL.READ",
+                        "ACSELECT.ALL.WRITE",
+                        "SELECT.BLOOMBERG"
+                    ],
+                    "url": "/select/data-source/BB/requests",
+                    "icon": "data"
+                },
+                {
+                    "title": "SELECT   ",
+                    "service": [
+                        "AUTHENTICATION.ALL",
+                        "ACSELECT.ALL.READ",
+                        "ACSELECT.ALL.WRITE",
+                        "SELECT.BLOOMBERG"
+                    ],
+                    "url": "/select-new/",
+                    "icon": "onboarding"
+                },
+                {
+                    "title": "Reuters",
+                    "service": "SELECT.REUTERS",
+                    "url": "/select/data-source/REUTERS/requests"
+                }
+            ]
+        },
+        {
+            "title": "Exceptions  ",
+            "pages": [
+                {
+                    "title": "Summary",
+                    "service": [
+                        "AUTHENTICATION.ALL",
+                        "OPS.CLEANSING",
+                        "OPS.ALL"
+                    ],
+                    "url": "/cleansing/",
+                    "icon": "cleansing"
+                },
+                {
+                    "title": "Configuration",
+                    "service": [
+                        "AUTHENTICATION.ALL",
+                        "DCIS.ALL",
+                        "DCIS.ADMIN",
+                        "DCIS.CONFIG"
+                    ],
+                    "url": "/cleansing/configuration/",
+                    "icon": "config"
+                }
+            ]
+        },
+        {
+            "title": "Browsing    ",
+            "pages": [
+                {
+                    "title": "Data Master (AC+)",
+                    "service": [
+                        "AUTHENTICATION.ALL",
+                        "BROWSE.ALL"
+                    ],
+                    "url": "/browse/ac/search",
+                    "icon": "data"
+                },
+                {
+                    "title": "Data Warehouse (ACX)",
+                    "service": [
+                        "AUTHENTICATION.ALL"
+                    ],
+                    "url": "/browse/acx/search",
+                    "icon": "data"
+                }
+            ]
+        },
+        {
+            "title": "Data Quality    ",
+            "pages": [
+                {
+                    "title": "Process Reporting",
+                    "service": [
+                        "AUTHENTICATION.ALL",
+                        "BROWSE.ALL"
+                    ],
+                    "url": "/lineage-statistics",
+                    "icon": "reports"
+                },
+                {
+                    "title": "Process Definitions",
+                    "service": [
+                        "TASKS.ALL"
+                    ],
+                    "url": "/task-service?serviceName=Lineage+Statistics",
+                    "icon": "reports"
+                }
+            ]
+        },
+        {
+            "title": "Distribution    ",
+            "pages": [
+                {
+                    "title": "Subscriptions",
+                    "service": [
+                        "TASKS.ALL"
+                    ],
+                    "url": "/batch-publishing",
+                    "icon": "distribution"
+                },
+                {
+                    "title": "Service Registry",
+                    "service": [
+                        "OPS.DISTRIBUTION"
+                    ],
+                    "url": "/service-registry",
+                    "icon": "distribution"
+                }
+            ]
+        },
+        {
+            "title": "Admin  ",
+            "pages": [
+                {
+                    "title": "Data Views",
+                    "service": [
+                        "AUTHENTICATION.ALL",
+                        "DATAMODEL.ADMIN.ALL",
+                        "DATAMODEL.ADMIN.DATAVIEWS"
+                    ],
+                    "url": "/data-view-admin/",
+                    "icon": "data"
+                },
+                {
+                    "title": "Data Model",
+                    "service": [
+                        "DATAMODEL.ADMIN.ALL",
+                        "DATAMODEL.ADMIN.RULES"
+                    ],
+                    "url": "/data-model-admin/attributes-rules",
+                    "icon": "data"
+                },
+                {
+                    "title": "Business Process",
+                    "service": [
+                        "AUTHENTICATION.ALL",
+                        "DATAMODEL.ADMIN.ALL",
+                        "DATAMODEL.ADMIN.RULES"
+                    ],
+                    "url": "/bpm-admin/",
+                    "icon": "data"
+                },
+                {
+                    "title": "Rules Catalog",
+                    "service": [
+                        "AUTHENTICATION.ALL",
+                        "DATAMODEL.ADMIN.ALL",
+                        "DATAMODEL.ADMIN.RULES"
+                    ],
+                    "url": "/data-model-admin/rules-catalog",
+                    "icon": "rules"
+                },
+                {
+                    "title": "Attributes Rules",
+                    "service": [
+                        "AUTHENTICATION.ALL",
+                        "DATAMODEL.ADMIN.ALL",
+                        "DATAMODEL.ADMIN.RULES"
+                    ],
+                    "url": "/data-model-admin/attributes-rules",
+                    "icon": "rules"
+                },
+                {
+                   "title": "Tasks",
+                   "service": [
+                       "AUTHENTICATION.ALL",
+                       "TASKS.ALL"
+                  ],
+                  "url": "/task-service"
+                 }
+            ]
+        }
+    ]

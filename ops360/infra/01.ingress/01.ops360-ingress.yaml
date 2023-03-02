@@ -1,0 +1,280 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ops360-core-ui-services
+  namespace: uat01 
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: 200m
+    
+    nginx.ingress.kubernetes.io/server-snippet: |-
+      add_header X-Request-ID $request_id;
+      keepalive_timeout 70;
+      underscores_in_headers on;
+      proxy_http_version 1.1;
+      client_max_body_size 0;
+      client_header_buffer_size 4096k;
+      large_client_header_buffers 4 8096k;
+      gzip  on;
+      gzip_types
+        text/css
+        text/javascript
+        text/xml
+        text/plain
+        application/javascript
+        application/x-javascript
+        application/json;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "Upgrade";
+    nginx.ingress.kubernetes.io/configuration-snippet: |-
+      more_set_headers "Cache-Control: no-cache";
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "24576k"
+    nginx.ingress.kubernetes.io/client-body-buffer-size: 200M
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  tls:
+  - hosts: 
+    - ops360uat01.acx-sandbox.net
+    secretName: ops360uat01-cert 
+  rules:
+    - host: ops360uat01.acx-sandbox.net
+      http:
+        paths:
+          - path: /ops360(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: operations-board-ui
+                port:
+                  number: 8080
+          - path: /auth(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 9005
+          - path: /browse(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: browsing-ui
+                port:
+                  number: 4000
+          - path: /acx(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: bdms-service-acx
+                port:
+                  number: 6970                  
+          - path: /data-model-admin(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: data-model-admin-ui
+                port:
+                  number: 8094
+          - path: /data-view-admin(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: data-view-admin-ui
+                port:
+                  number: 8095
+          - path: /bpm-admin(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: bpm-admin-ui
+                port:
+                  number: 8096
+          - path: /task-service(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: task-service-ui
+                port:
+                  number: 8097
+          - path: /tasks(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: task-service
+                port:
+                  number: 9012
+          - path: /lineage(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: ac-dl-read
+                port:
+                  number: 9009
+          - path: /datasets(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: data-sets-service
+                port:
+                  number: 9011
+          - path: /lineage-stats(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: lineage-stats
+                port:
+                  number: 9014
+          - path: /lineage-statistics(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: lineage-stats-ui
+                port:
+                  number: 8098
+          - path: /cleansing(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: data-cleansing-ui
+                port:
+                  number: 8083
+          - path: /ac-dl-ingest(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: ac-dl-ingest
+                port:
+                  number: 9010
+          - path: /data-model-admin(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: data-model-admin-ui
+                port:
+                  number: 8094
+          - path: /process-tracking(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: process-tracking
+                port:
+                  number: 8090
+          - path: /spreadsheets(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: spreadsheet-service
+                port:
+                  number: 9000
+
+          - path: /batch-publishing(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: batch-publisher-ui
+                port:
+                  number: 8080
+          - path: /batch-publisher(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: batch-publisher
+                port:
+                  number: 9017                  
+          - path: /select-new(/|$)(.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: ac-select-ui
+                port:
+                  number: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ops360-core-ui
+  namespace: uat01
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: 200m
+    nginx.ingress.kubernetes.io/server-snippet: |-
+      add_header X-Request-ID $request_id;
+      keepalive_timeout 70;
+      underscores_in_headers on;
+      proxy_http_version 1.1;
+      client_max_body_size 0;
+      gzip  on;
+      gzip_types
+        text/css
+        text/javascript
+        text/xml
+        text/plain
+        application/javascript
+        application/x-javascript
+        application/json;
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "Upgrade";
+
+    nginx.ingress.kubernetes.io/configuration-snippet: |-
+      more_set_headers "Cache-Control: no-cache";
+    nginx.ingress.kubernetes.io/proxy-buffer-size: "24576k"
+    nginx.ingress.kubernetes.io/client-body-buffer-size: 200M
+spec:
+  tls:
+  - hosts: 
+    - ops360uat01.acx-sandbox.net   
+    secretName: ops360uat01-cert
+  rules:
+    - host: ops360uat01.acx-sandbox.net
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: core-ui
+                port:
+                  number: 80
+          - path: /*/config.json
+            pathType: Prefix
+            backend:
+              service:
+                name: core-ui
+                port:
+                  number: 80
+          - path: /*/navigation.json
+            pathType: Prefix
+            backend:
+              service:
+                name: core-ui
+                port:
+                  number: 80
+          - path: /issue-service
+            pathType: Prefix
+            backend:
+              service:
+                name: issue-service
+                port:
+                  number: 9021
+          - path: /select
+            pathType: Prefix
+            backend:
+              service:
+                name: ac-select
+                port:
+                  number: 9000                  
+          - path: /ac
+            pathType: Prefix
+            backend:
+              service:
+                name: bdms-service
+                port:
+                  number: 6969

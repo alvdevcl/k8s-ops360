@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1alpha2
+kind: Certificate
+metadata:
+  name: ops360uat01-cert
+  namespace: uat01
+spec:
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt-prod
+  secretName: ops360uat01-cert
+  dnsNames:
+  - ops360uat01.acx-sandbox.net
+  - bdms-service.ops360uat01.acx-sandbox.net
+  - ac-dl-ingest.ops360uat01.acx-sandbox.net
+  - process-tracking.ops360uat01.acx-sandbox.net

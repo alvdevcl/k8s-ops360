@@ -1,0 +1,73 @@
+# Applying this configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: script-executor
+  name: script-executor
+  namespace: uat01
+data:
+  scripts.json: |-
+    [
+    {
+      "name":"where am i",
+      "command":"pwd",
+      "stage":"ACQUISITION",
+      "parameters":[]
+    },{
+      "name":"show files",
+      "command":"ls",
+      "stage":"ENRICHMENT",
+      "parameters":[{"name" : "options", "type" : "string"}, {"name" : "location", "type" : "string"}]
+    },
+    {
+      "name":"list BB ados",
+      "command":"/home/acdba/gk/list_bb_ados.sh",
+      "stage":"ENRICHMENT",
+      "parameters":[]
+    },
+    {
+      "name" : "Consolidate Prices (Scope)",
+      "command": ". /home/acdba/ac/bin/acenv.sh; . /home/acdba/pc_from_scope.env; /home/acdba/ac/bin/update_prices_for_bdms.sh {{Saved Search}} {{Date Range}} {{Start Day Offset}} {{Scope}} {{Timeseries Store}} {{Classic PC Options}}",
+      "stage" : "ENRICHMENT",
+      "parameters": [
+        {"name": "Timeseries Store", "type": "string"},
+        {"name": "Scope", "type": "scope_id", "optionString" : "-s", "description" : "Scope specifies the consolidation objects. It is required if no model is set.", "optional": false},
+        {"name": "Saved Search", "type": "dataset_id", "optionString" : "-d", "description" : "Specifies objects to consolidate instead of scope. It is optional if Scope is specified but mandatory otherwise.", "optional": true},
+        {"name": "Date Range", "type": "string", "optionString" : "-D", "description" : "A date range to consolidate prices within, format: 'yyyymmdd;yyyymmdd'", "optional" : true},
+        {"name": "Start Day Offset", "type": "number", "optionString" : "-o", "description" : "Offset in number of days from the current day to use as the start date. For example: 0 (default) is today, 1 is yesterday.", "optional" : true},
+        {"name": "Classic PC Options", "type": "string", "description": "Options for update_prices.sh", "optional" : true}
+      ]
+    },
+    {
+      "name" : "Consolidate Prices",
+      "command": ". /home/acdba/ac/bin/acenv.sh; . /home/acdba/pc_from_scope.env; /home/acdba/ac/bin/update_prices_for_bdms.sh {{Saved Search}} {{Date Range}} {{Start Day Offset}} {{Model Name}} {{Class Name}} {{Timeseries Store}} {{Classic PC Options}}",
+      "stage" : "ENRICHMENT",
+      "parameters": [
+        {"name": "Timeseries Store", "type": "string"},
+        {"name": "Model Name", "type": "string", "optionString": "-m", "description": "Name of the Data Model to use instead of scope.","optional": false},
+        {"name": "Class Name", "type": "string", "optionString": "-c", "description": "Name of the Data Model class to use instead of scope", "optional": false},
+        {"name": "Saved Search", "type" : "dataset_id", "optionString" : "-d", "description" : "Specifies objects to consolidate instead of scope. It is optional if Scope is specified but mandatory otherwise.", "optional" : false},
+        {"name": "Date Range", "type": "string", "optionString" : "-D", "description" : "A date range to consolidate prices within, format: 'yyyymmdd;yyyymmdd'", "optional" : true},
+        {"name": "Start Day Offset", "type": "number", "optionString" : "-o", "description" : "Offset in number of days from the current day to use as the start date. For example: 0 (default) is today, 1 is yesterday.", "optional" : true},
+        {"name": "Classic PC Options", "type": "string", "description": "Options for update_prices.sh", "optional" : true}
+      ]
+    }
+    ]
+
+  app.properties: |-
+    scriptexecutor.server.host = santac2.acx-sandbox.net 
+    scriptexecutor.service.file = file:/opt/external/scripts.json
+    logging.level.root = "DEBUG"
+    scriptexecutor.server.port = 22
+    scriptexecutor.server.user = acdba
+    scriptexecutor.server.password = acdba1
+    scriptexecutor.process-tracking.url = http://process-tracking.uat01.svc.cluster.local:8090/api/v1/process
+    scriptexecutor.service.executionDelayInSec=30
+    scriptexecutor.auth-service.host = http://auth-service.uat01.svc.cluster.local:9005/
+    scriptexecutor.auth-service.cookie = 
+    ac.auth.keystore-file=/opt/app/conf/auth/keystore.jks
+    ac.auth.keystore-password=password
+    ac.auth.key-alias=ac-authentication
+    ac.auth.algorithm=SHA256withECDSA
+    ac.auth.enabled=true

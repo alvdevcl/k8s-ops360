@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: hdfs-namenode
+  namespace: primecloud
+spec:
+  selector:
+    matchLabels:
+      app: hdfs-namenode
+  replicas: 1
+  serviceName: hdfs-namenode
+  template:
+    metadata:
+      labels:
+        app: hdfs-namenode
+    spec:
+      initContainers:
+        - name: delete-lost-found
+          image: busybox
+          command: ["sh", "-c", "rm -rf /hadoop/dfs/name/lost+found"]
+          volumeMounts:
+          - name: hdfs-namenode-storage
+            mountPath: /hadoop/dfs/name
+      containers:
+      - name: hdfs-namenode
+        image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+        imagePullPolicy: Always
+        env:
+         - name: CLUSTER_NAME
+           value: "hdfs-prime"
+        envFrom:
+         - configMapRef:
+             name: hdfs-hadoop-env
+        ports:
+        - containerPort: 9870
+          name: namenode-http
+        - containerPort: 9000
+          name: namenode-meta
+        volumeMounts:
+          - name: hdfs-namenode-storage
+            mountPath: /hadoop/dfs/name
+      volumes:
+       - name: hdfs-namenode-storage
+         persistentVolumeClaim:
+           claimName: hdfs-namenode-pvc

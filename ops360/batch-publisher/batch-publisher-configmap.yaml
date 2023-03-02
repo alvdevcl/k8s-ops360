@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: batch-publisher
+  name: batch-publisher
+  namespace: uat01
+data:
+  schema.cql: |-
+    CREATE KEYSPACE IF NOT EXISTS ops360uat01_batch_publisher WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+
+    CREATE TABLE IF NOT EXISTS ops360uat01_batch_publisher.temp_tasks (
+        id text,
+        task_id text,
+        task_name text,
+        last_run timestamp,
+        subscription_id text,
+        state text,
+        started timestamp,
+        finished timestamp,
+        PRIMARY KEY (id)
+    );
+
+
+    CREATE TABLE IF NOT EXISTS ops360uat01_batch_publisher.subscriptions
+    (
+        id         text,
+        name       text,
+        dataset_id   text,
+        options    text,
+        conditions text,
+        adapters   text,
+        PRIMARY KEY (id)
+    );
+
+    CREATE TABLE IF NOT EXISTS ops360uat01_batch_publisher.subscriptions_change_log
+    (
+        subscription_id  text,
+        change_timestamp TIMESTAMP,
+        username         TEXT,
+        summary          TEXT,
+        version          INT,
+        PRIMARY KEY ((subscription_id), change_timestamp)
+    )
+    WITH CLUSTERING ORDER BY (change_timestamp DESC);    
+   
+    CREATE TABLE IF NOT EXISTS ops360uat01_batch_publisher.tasks_successful_runs
+    (
+        task_id text,
+        last_run timestamp,
+        PRIMARY KEY ((task_id), last_run)
+    )
+    WITH CLUSTERING ORDER BY (last_run DESC);

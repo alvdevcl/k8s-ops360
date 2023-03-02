@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: acx-fastapi
+  name: acx-fastapi-service
+  namespace: ops360
+spec:
+  ports:
+  - name: http
+    port: 9000
+    protocol: TCP
+    targetPort: 9000
+  selector:
+    app: acx-fastapi
+  type: ClusterIP

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: ac-select
+  name: ac-select
+  namespace: uat01
+spec:
+  ports:
+    - name: http
+      port: 9000
+  selector:
+    app: ac-select

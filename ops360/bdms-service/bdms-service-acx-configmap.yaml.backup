@@ -1,0 +1,439 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  labels:
+    app: bdms-service-acx
+  name: bdms-service-acx
+  namespace: uat01
+data:
+  application.ini: |-
+    # Setting -X directly (-J is stripped)
+    # -J-X
+    -J-Xmx3G
+    -J-Xms3G
+
+    -J-XX:+UseG1GC
+    -J-XX:+UseStringDeduplication
+    -J-XX:+OptimizeStringConcat
+
+    -J-XX:+HeapDumpOnOutOfMemoryError
+    -J-XX:HeapDumpPath=/acx/heap/java_pid<pid>.hprof
+    -J-XX:+UseGCOverheadLimit
+
+    # Add additional jvm parameters
+    # -Dkey=val
+    -Dplay.http.context=/
+    -Dconfig.file=/opt/docker/conf/application.conf
+    -Dlogger.file=/opt/docker/conf/external/logback.xml
+  
+  application.conf: |-
+
+    include "acxcore.conf"
+
+    # This is the main configuration file for the application.
+    # https://www.playframework.com/documentation/latest/ConfigFile
+    play.http.secret.key = QCYtAnfkaZiwrNwnxIlR6CTfG3gf90Latabg5241ABR5W1uDFN
+    play.http.secret.key=${?APPLICATION_SECRET_KEY}
+    play.filters{
+      enabled += play.filters.gzip.GzipFilter
+      hosts {
+        allowed = ["."]
+      }
+    }
+
+    play.filters.csrf.header.bypassHeaders {
+      Csrf-Token = "nocheck"
+      Csrf-Token = ${?CSRF_TOKEN}
+    }
+
+    play.http.errorHandler = "com.ac.util.exception.handler.ErrorHandler"
+    play.modules.enabled += "com.ac.authorization.AuthorizationModule"
+    play.modules.enabled += "play.modules.swagger.SwaggerModule"
+    play.modules.disabled += "play.api.db.evolutions.EvolutionsModule"
+    # Use custom evolutions module to enable multiple database scripts (Oracle, PosgreSQL)
+    play.modules.enabled += "com.ac.bdms.persistence.evolutions.EvolutionsModule"
+    play.logger.includeConfigProperties=true
+    play.server.pidfile.path=${?PIDFILE_PATH}
+
+    ac.bdms {
+      ac.bdms.converter.create-time-series-null-value = false
+      ac.bdms.converter.create-time-series-null-value = ${?CREATE-TIME-SERIES-NULL-VALUE}
+      // Supported Service implementations: "ACServer" and "ACX"
+      data.service.implementation=ACServer
+      data.service.implementation = ${?BDMS_SERVICE}
+      data.service.prime.modelclass-in-fundmstr = false
+      data.service.prime.modelclass-in-fundmstr = ${?BDMS_MODEL_CLASS_IN_FUNDMSTR}
+      # The max number of time-series records that can be fetched from Prime in a single request.
+      # Not applicable for ACX
+      data.service.prime.timeseries_result_set_limit = 500
+      data.service.prime.timeseries_result_set_limit = ${?BDMS_DATA_SERVICE_TIMESERIES_RECORDS_FETCH_LIMI}
+      data.loader.ado_ids_batch_size = 1000
+      data.loader.ado_ids_batch_size = ${?BDMS_DATA_LOADER_ADO_IDS_BATCH_SIZE}
+      input.date-time-format = "yyyyMMdd'T'HHmmssZ"
+      json {
+        classifications.schema.file = "conf/schema/classifications-schema.json"
+        domain-model.schema.file = "conf/schema/domain-model-schema.json"
+        domain-view.schema.file = "conf/schema/domain-model-view.json"
+        public-types.schema.file = "conf/schema/public-types-schema.json"
+        domain-models-dir = "target/sample-model"
+        domain-models-dir = ${?MODEL_FOLDER}
+      }
+      creation{
+        batch-size=100
+        retry-count=5
+        use-override=true
+        use-override=${?USE_OVERRIDE}
+        default-template="BDMS_DEFAULT"
+        default-template=${?DEFAULT_TEMPLATE}
+      }
+      changelog.enabled = true
+      changelog.enabled = ${?CHANGELOG_ENABLED}
+      changelog.max.attributes-in-record = 10
+      changelog.max.attributes-in-record = ${?CHANGELOG_MAX_ATTRIBUTES_IN_RECORD}
+
+      #Supported property values: FILESYSTEM, ORACLE, POSTGRESQL
+      configuration.store = FILESYSTEM
+      configuration.store = ${?CONFIGURATION_STORE}
+      applog.dir = ${?LOGS_FOLDER}
+
+      pc_source_ados_attrid_default = null
+      pc_source_ados_attrid_default = ${?PC_SOURCE_ADOS_ATTRID_DEFAULT}
+    }
+
+    remote.services.lineage-service.host = ${?DATA_LINEAGE_SERVICE_BASE_URL}
+    remote.services.lineage-service.auth-token = ${?DATA_LINEAGE_SERVICE_AUTH_TOKEN}
+
+    remote.services.auth-service.host = ${?AUTH_SERVICE_URL}
+    # The token must allow access the following services: AUTHENTICATION.DATAVIEWS and AUTHENTICATION.BPM
+    remote.services.auth-service.auth-token = ${?AUTH_SERVICE_AUTH_TOKEN}
+
+    remote.services.issue-service.host = ${?ISSUE_SERVICE_URL}
+    # The token must allow access the DCIS.ADMIN service
+    remote.services.issue-service.auth-token = ${?ISSUE_SERVICE_AUTH_TOKEN}
+
+    remote.services.dataset-service.host = ${?DATASET_SERVICE_URL}
+
+    play.evolutions.autocommit = true
+    play.evolutions.db.bdms.enabled = false
+    play.evolutions.db.bdms.enabled = ${?BDMS_DB_EVOLUTIONS_ENABLED}
+    play.evolutions.db.bdms.autoApply = true
+    play.evolutions.db.bdms.autoApply = ${?BDMS_DB_EVOLUTIONS_AUTO_APPLY}
+
+    # supported values: Prime_PostgresPersistenceUnit, Prime_OraclePersistenceUnit
+    jpa.prime=Prime_OraclePersistenceUnit
+    jpa.prime=${?PRIME_PERSISTENCE_UNIT}
+
+    # supported values: BDMS_PostgresPersistenceUnit, BDMS_OraclePersistenceUnit
+    jpa.bdms=BDMS_PostgresPersistenceUnit
+    jpa.bdms=${?BDMS_PERSISTENCE_UNIT}
+
+    db.default {
+      driver = oracle.jdbc.OracleDriver
+      driver = ${?DB_DRIVER}
+      url = ${?DB_URL}
+      logSql = true
+      jndiName=PrimeDS
+      username=${?DB_USER}
+      password=${?DB_PASSWORD}
+    }
+
+    db.bdms {
+      driver = org.postgresql.Driver
+      driver = ${?BDMS_DB_DRIVER}
+      url = ${?BDMS_DB_URL}
+      logSql = true
+      jndiName = BDMS_DS
+      username = ${?BDMS_DB_USER}
+      password = ${?BDMS_DB_PASSWORD}
+    }
+
+    fixedConnectionPool = 10
+
+    # Set Hikari to fixed size
+    play.db {
+      prototype {
+        hikaricp.minimumIdle = ${fixedConnectionPool}
+        hikaricp.maximumPoolSize = ${fixedConnectionPool}
+        hikaricp.idleTimeout = 60000
+        hikaricp.connectionTimeout = 60000
+        hikaricp.validationTimeout = 3000
+        hikaricp.loginTimeout = 5
+        hikaricp.maxLifetime = 60000
+      }
+    }
+
+    contexts {
+      # Thread context for data service (Prime or ACX) queries
+      dataServiceQueryOperations {
+        executor = "thread-pool-executor"
+        throughput = 1
+        thread-pool-executor {
+          fixed-pool-size = 10
+          fixed-pool-size = ${?DATA_SERVICE_QUERY_THREAD_POOL_SIZE}
+        }
+      }
+
+      # Thread context for attribute value queries (Prime or ACX)
+      attributeValueQueryOperations {
+        executor = "thread-pool-executor"
+        throughput = 1
+        thread-pool-executor {
+          fixed-pool-size = 20
+          fixed-pool-size = ${?ATTRIBUTE_VALUES_QUERY_THREAD_POOL_SIZE}
+        }
+      }
+
+      # Thread context for attribute value updates (Prime or ACX)
+      attributeValueUpdateOperations {
+        executor = "thread-pool-executor"
+        throughput = 1
+        thread-pool-executor {
+          fixed-pool-size = 10
+          fixed-pool-size = ${?ATTRIBUTE_VALUES_UPDATE_THREAD_POOL_SIZE}
+        }
+      }
+    }
+
+    ac.api {
+      host = ${?AC_HOST}
+      installation = ${?AC_INST}
+      user = ${?AC_USER}
+      password = ${?AC_PASSWORD}
+      queriesMax = 4
+      retryInitialInterval=${?AC_CONNECTION_RETRY_INITIAL_INTERVAL}
+      retryMaxAttempts=${?AC_CONNECTION_RETRY_MAX_ATTEMPTS}
+    }
+
+    ac.authentication {
+      enabled = false
+      enabled = ${?AUTHENTICATION_ENABLED}
+      keystore.file = "conf/auth/keystore.jks"
+      keystore.file = ${?KEYSTORE_FILE}
+      keystore.password = ${?KEYSTORE_PASSWORD}
+      key.alias = "ac-authentication"
+      key.alias = ${?KEY_ALIAS}
+
+      cipher.algorithm = "SHA256withECDSA"
+      rights.cookie.name = "rights"
+      password.expiration.enabled = false
+      rights.expiration.enabled = false
+    }
+
+    akka.http {
+      parsing {
+        max-uri-length = 1m
+      }
+    }
+
+    play.server.akka.max-header-value-length=1M
+    play.http.parser.maxMemoryBuffer=20MB
+    play.http.parser.maxDiskBuffer = 200MB
+    parsers.anyContent.maxLength = 200MB
+
+    swagger {
+      # to hide POST/PUT/DELETE end-points set the filter property to "com.ac.bdms.ws.swagger.SwaggerPrivateApiSpecFilter"
+      filter = "com.ac.bdms.ws.swagger.SwaggerDefaultApiSpecFilter"
+      filter = ${?SWAGGER_API_FILTER}
+      api {
+        host = ""
+        info {
+          title = "BDMS API"
+          license = "Copyrights: Asset Control International B.V."
+          licenseUrl = "https://www.asset-control.com"
+        }
+      }
+    }
+
+
+    secret.name.prefix="bdms-secret."
+    secret.name.prefix=${?SECRET_PREFIX}
+    play.application.loader = com.alveotech.services.config.ApplicationLoader
+    swagger.filter = "com.ac.bdms.swagger.CustomSpecFilter"
+
+  acxcore.conf: |-
+    // https://docs.datastax.com/en/developer/java-driver/4.6/manual/core/configuration/reference/
+    CassandraConf {
+      username = "cassandra"
+      password = "cassandra"
+      hosts = "cassandra1.uat.acx-sandbox.net:9042"
+      hosts = ${?CASSANDRA_HOSTS}
+      datacenter = "us-east"
+      datacenter = ${?CASSANDRA_DATACENTER}
+      build = "local"
+      keyspace = "acx123"
+      keyspace = ${?ACX_CASSANDRA_KEYSPACE}
+      createKeyspace = false
+      initializeSearchIndexes = false
+      readConsistency = LOCAL_QUORUM
+      readConsistency = ${?CASSANDRA_READ_CONSISTENCY}
+      writeConsistency = LOCAL_QUORUM
+      writeConsistency = ${?CASSANDRA_WRITE_CONSISTENCY}
+      timeout= 120000
+      timeouts = ${?CASSANDRA_TIMEOUT}
+
+      ExponentialRetryPolicy {
+        // base value for the exponential retry policy
+        base = 10
+        base = ${?CASSANDRA_EXP_RETRY_POLICY_BASE}
+        // max exponent for the retry policy: base ^ maxExponent delay
+        exponent = 5
+        exponent = ${?CASSANDRA_EXP_RETRY_POLICY_EXPONENT}
+        waitingLogThreshold = 3
+        waitingLogThreshold = ${?CASSANDRA_EXP_RETRY_POLICY_WAITING_LOG_THRESHOLD}
+      }
+
+      PoolingOptions {
+        // See https://docs.datastax.com/en/drivers/java/3.4/com/datastax/driver/core/PoolingOptions.html
+        // NOTE! Include only keys you want to overwrite; for the missing entries the Cassandra driver will choose the defaults
+        Local {
+          maxConnectionsPerHost = 1
+          maxConnectionsPerHost = ${?CASSANDRA_POOLING_OPTIONS_LOCAL_MAX_CONNECTIONS_PER_HOST}
+          maxRequestsPerConnection = 1024
+          maxRequestsPerConnection = ${?CASSANDRA_POOLING_OPTIONS_LOCAL_MAX_REQUESTS_PER_CONNECTION}
+          newConnectionThreshold = 800
+          newConnectionThreshold = ${?CASSANDRA_POOLING_OPTIONS_LOCAL_NEW_CONNECTION_THRESHOLD}
+        }
+
+        Remote {
+          maxConnectionsPerHost = 1
+          maxConnectionsPerHost = ${?CASSANDRA_POOLING_OPTIONS_REMOTE_MAX_CONNECTIONS_PER_HOST}
+          maxRequestsPerConnection = 256
+          maxRequestsPerConnection = ${?CASSANDRA_POOLING_OPTIONS_REMOTE_MAX_REQUESTS_PER_CONNECTION}
+          newConnectionThreshold = 200
+          newConnectionThreshold = ${?CASSANDRA_POOLING_OPTIONS_REMOTE_NEW_CONNECTION_THRESHOLD}
+        }
+
+        idleTimeoutSeconds = 120
+        idleTimeoutSeconds = ${?CASSANDRA_POOLING_OPTIONS_IDLE_TIMEOUT_SECONDS}
+        heartbeatIntervalSeconds = 30
+        heartbeatIntervalSeconds = ${?CASSANDRA_POOLING_OPTIONS_HEARTBEAT_INTERVAL_SECONDS}
+        maxQueueSize = 256
+        maxQueueSize = ${?CASSANDRA_POOLING_OPTIONS_MAX_QUEUE_SIZE}
+        poolTimeoutMillis = 5000
+        poolTimeoutMillis = ${?CASSANDRA_POOLING_OPTIONS_POOL_TIMEOUT_MILLIS}
+      }
+    }
+
+    AdosSplitting {
+      maxNuDays=30
+      maxSnapshots = 365
+      lastEpsilon = 50
+    }
+
+    AsyncQueryProcessor {
+      batchSize = 2000
+      timeout = 70000
+    }
+
+    DerivedTimeSeries.segmentSize = 7
+
+    ExecuteAsync.parallelizationFactor = 100
+
+    TimeSeriesDao {
+      tsReadWaiting = 60000
+      startYear = 2000
+      startYear = ${?TIME_SERIES_DAO_START_YEAR}
+    }
+
+    AdoHistory {
+      attributeTimeOut = 5000
+    }
+
+    datastax-java-driver {
+      basic.request {
+        timeout = 60 seconds
+      }
+    }
+
+    SolrConf=solr
+
+    SearchConfig {
+      // can have 2 possible values: "DSESolr", "ApacheSolr"
+      searchEngine = "ApacheSolr"
+      searchEngine = ${?SEARCH_ENGINE}
+      collection = "historyQA"
+      collection = ${?SOLR_COLLECTION}
+      timeout = 120000
+      timeout = ${?SEARCH_TIMEOUT}
+      solrThreadPoolSize = 20
+      endPoints = "solr881.uat.acx-sandbox.net:8983"
+      endPoints = ${?SOLR_ENDPOINTS}
+    }
+
+    KafkaConfig {
+      kafka.bootstrap.servers = "kafka1.uat.acx-sandbox.net:9092"
+      kafka.bootstrap.servers = ${?BOOTSTRAP_SERVERS}
+      kafka.topic = "ops360uat01_7thNov2022"
+      kafka.topic = ${?KAFKA_TOPIC}
+      kafka.enable.idempotence = true
+      kafka.batch.size = 32768
+      kafka.linger.ms = 20
+      kafka.compression.type = "snappy"
+      kafka.custom {
+        message.max.bytes = 2097152
+        max.request.size = 2097152
+      }
+      max.messages.batch = 10
+    }
+
+
+
+    acx.FastApi {
+      baseUrl = "http://localhost:9000"
+      baseUrl = ${?ACX_FAST_API_BASE_URL}
+    }
+
+
+  solr.properties: |-
+
+    solr.ribbon.listOfServers=solr881.uat.acx-sandbox.net:8983
+    solr.ribbon.MaxAutoRetries=3
+    solr.ribbon.MaxAutoRetriesNextServer=3
+    solr.ribbon.OkToRetryOnAllOperations=true
+    solr.ribbon.ServerListRefreshInterval=2000
+    solr.ribbon.ClientClassName=com.assetcontrol.acx.persistence.search.query.solr.HttpLoadBalancedSearchClient
+    solr.ribbon.eureka.enabled=false
+
+
+  
+  logback.xml: |-
+
+    <configuration>
+
+      <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
+
+      <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${ac.bdms.applog.dir:-./logs}/application.log</file>
+        <encoder>
+          <pattern>%date [%level] from %logger in %thread - %message%n%xException</pattern>
+        </encoder>
+      </appender>
+
+      <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+          <pattern>%date %coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+        </encoder>
+      </appender>
+
+      <appender name="ASYNCFILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE" />
+      </appender>
+
+      <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="STDOUT" />
+      </appender>
+
+      <logger name="play" level="INFO" />
+      <logger name="application" level="DEBUG" />
+      <logger name="com.ac.bdms" level="INFO" />
+
+      <root level="WARN">
+        <appender-ref ref="ASYNCFILE" />
+        <appender-ref ref="ASYNCSTDOUT" />
+      </root>
+
+    </configuration>
+
+
+
+
